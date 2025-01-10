@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2024 Andrew Gunnerson
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
 package com.chiller3.bcr
 
 import android.annotation.SuppressLint
@@ -5,6 +10,7 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.res.Resources
@@ -13,12 +19,11 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.util.Log
-import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.core.net.toFile
 import com.chiller3.bcr.extension.formattedString
 import com.chiller3.bcr.output.OutputFile
 import com.chiller3.bcr.settings.SettingsActivity
-import java.util.*
 
 class Notifications(
     private val context: Context,
@@ -29,6 +34,7 @@ class Notifications(
         const val CHANNEL_ID_PERSISTENT = "persistent"
         const val CHANNEL_ID_FAILURE = "failure"
         const val CHANNEL_ID_SUCCESS = "success"
+        const val CHANNEL_ID_SILENCE = "silence"
 
         private val LEGACY_CHANNEL_IDS = arrayOf("alerts")
 
@@ -107,6 +113,17 @@ class Notifications(
     }
 
     /**
+     * Create a high priority notification channel for pure silence warnings.
+     */
+    private fun createPureSilenceWarningsChannel() = NotificationChannel(
+        CHANNEL_ID_SILENCE,
+        context.getString(R.string.notification_channel_silence_name),
+        NotificationManager.IMPORTANCE_HIGH,
+    ).apply {
+        description = context.getString(R.string.notification_channel_silence_desc)
+    }
+
+    /**
      * Ensure notification channels are up-to-date.
      *
      * Legacy notification channels are deleted without migrating settings.
@@ -116,6 +133,7 @@ class Notifications(
             createPersistentChannel(),
             createFailureAlertsChannel(),
             createSuccessAlertsChannel(),
+            createPureSilenceWarningsChannel(),
         ))
         LEGACY_CHANNEL_IDS.forEach { notificationManager.deleteNotificationChannel(it) }
     }
@@ -128,7 +146,6 @@ class Notifications(
     fun createPersistentNotification(
         @StringRes titleResId: Int,
         message: String?,
-        @DrawableRes iconResId: Int,
         actions: List<Pair<Int, Intent>>,
     ): Notification {
         val notificationIntent = Intent(context, SettingsActivity::class.java)
@@ -140,9 +157,9 @@ class Notifications(
             setContentTitle(context.getText(titleResId))
             if (message != null) {
                 setContentText(message)
-                style = Notification.BigTextStyle().bigText(message)
+                style = Notification.BigTextStyle()
             }
-            setSmallIcon(iconResId)
+            setSmallIcon(R.drawable.ic_launcher_quick_settings)
             setContentIntent(pendingIntent)
             setOngoing(true)
             setOnlyAlertOnce(true)
@@ -172,20 +189,32 @@ class Notifications(
         }
     }
 
+    /** Check whether the file lives on device-protected storage. */
+    private fun isDeviceProtectedStorage(outputFile: OutputFile): Boolean {
+        if (outputFile.uri.scheme != ContentResolver.SCHEME_FILE) {
+            return false
+        }
+
+        val file = outputFile.uri.toFile()
+
+        return file.startsWith(prefs.directBootInProgressDir)
+                || file.startsWith(prefs.directBootCompletedDir)
+    }
+
     /**
-     * Send an alert notification with the given [title] and [icon].
+     * Send a recording alert notification with the given [title].
      *
-     * * If [errorMsg] is not null, then it is appended to the text with a black line before it.
+     * * If [errorMsg] is not null, then it is prepended to the text with a blank line after it.
      * * If [file] is not null, the human-readable URI path is appended to the text with a blank
      *   line before it if needed. In addition, three actions, open/share/delete, are added to the
      *   notification. The delete action dismisses the notification, but open and share do not.
      *   Clicking on the notification itself will behave like the open action, except the
-     *   notification will be dismissed.
+     *   notification will be dismissed. However, if the file refers to a file on device-protected
+     *   storage, then all actions are removed since the file is not accessible to the user.
      */
-    private fun sendAlertNotification(
+    private fun sendRecordingNotification(
         channel: String,
         @StringRes title: Int,
-        @DrawableRes icon: Int,
         errorMsg: String?,
         file: OutputFile?,
         additionalFiles: List<OutputFile>,
@@ -199,7 +228,7 @@ class Notifications(
                     append(errorMsgTrimmed)
                 }
                 if (file != null) {
-                    if (!isEmpty()) {
+                    if (isNotEmpty()) {
                         append("\n\n")
                     }
                     append(file.uri.formattedString)
@@ -211,9 +240,9 @@ class Notifications(
                 setContentText(text)
                 style = Notification.BigTextStyle()
             }
-            setSmallIcon(icon)
+            setSmallIcon(R.drawable.ic_launcher_quick_settings)
 
-            if (file != null) {
+            if (file != null && !isDeviceProtectedStorage(file)) {
                 // It is not possible to grant access to SAF URIs to other applications
                 val wrappedUri = RecorderProvider.fromOrigUri(file.uri)
 
@@ -282,38 +311,90 @@ class Notifications(
     }
 
     /**
-     * Send a success alert notification.
+     * Send a recording success alert notification.
      *
      * This will explicitly vibrate the device if the user enabled vibration for
      * [CHANNEL_ID_SUCCESS]. This is necessary because Android itself will not vibrate for a
      * notification during a phone call.
+     *
+     * If [file] lives on device protected storage, then the notification will not be sent because
+     * the user cannot act on it in any meaningful way.
      */
-    fun notifySuccess(
-        @StringRes title: Int,
-        @DrawableRes icon: Int,
-        file: OutputFile,
-        additionalFiles: List<OutputFile>,
-    ) {
-        sendAlertNotification(CHANNEL_ID_SUCCESS, title, icon, null, file, additionalFiles)
+    fun notifyRecordingSuccess(file: OutputFile, additionalFiles: List<OutputFile>) {
+        if (isDeviceProtectedStorage(file)) {
+            return
+        }
+        sendRecordingNotification(
+            CHANNEL_ID_SUCCESS,
+            R.string.notification_recording_succeeded,
+            null,
+            file,
+            additionalFiles,
+        )
         vibrateIfEnabled(CHANNEL_ID_SUCCESS)
     }
 
     /**
-     * Send a failure alert notification.
+     * Send a recording failure alert notification.
      *
      * This will explicitly vibrate the device if the user enabled vibration for
      * [CHANNEL_ID_FAILURE]. This is necessary because Android itself will not vibrate for a
      * notification during a phone call.
+     *
+     * If [file] lives on device protected storage, the notification will still be shown, but
+     * without any actions.
      */
-    fun notifyFailure(
-        @StringRes title: Int,
-        @DrawableRes icon: Int,
+    fun notifyRecordingFailure(
         errorMsg: String?,
         file: OutputFile?,
         additionalFiles: List<OutputFile>,
     ) {
-        sendAlertNotification(CHANNEL_ID_FAILURE, title, icon, errorMsg, file, additionalFiles)
+        sendRecordingNotification(
+            CHANNEL_ID_FAILURE,
+            R.string.notification_recording_failed,
+            errorMsg,
+            file,
+            additionalFiles,
+        )
         vibrateIfEnabled(CHANNEL_ID_FAILURE)
+    }
+
+    /**
+     * Send a pure silence warning notification.
+     *
+     * This will explicitly vibrate the device if the user enabled vibration for
+     * [CHANNEL_ID_SILENCE]. This is necessary because Android itself will not vibrate for a
+     * notification during a phone call.
+     */
+    fun notifyRecordingPureSilence(packageName: String) {
+        sendRecordingNotification(
+            CHANNEL_ID_SILENCE,
+            R.string.notification_recording_failed,
+            context.getString(R.string.notification_pure_silence_error, packageName),
+            null,
+            emptyList(),
+        )
+        vibrateIfEnabled(CHANNEL_ID_SILENCE)
+    }
+
+    /** Send a direct boot file migration failure alert notification. */
+    fun notifyMigrationFailure(errorMsg: String?) {
+        val notificationId = prefs.nextNotificationId
+
+        val notification = Notification.Builder(context, CHANNEL_ID_FAILURE).run {
+            val text = errorMsg?.trim() ?: ""
+
+            setContentTitle(context.getString(R.string.notification_direct_boot_migration_failed))
+            if (text.isNotBlank()) {
+                setContentText(text)
+                style = Notification.BigTextStyle()
+            }
+            setSmallIcon(R.drawable.ic_launcher_quick_settings)
+
+            build()
+        }
+
+        notificationManager.notify(notificationId, notification)
     }
 
     /** Dismiss all alert (non-persistent) notifications. */

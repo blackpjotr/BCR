@@ -1,239 +1,160 @@
+/*
+ * SPDX-FileCopyrightText: 2023-2024 Andrew Gunnerson
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
 package com.chiller3.bcr.rule
 
 import android.Manifest
 import android.app.Application
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.chiller3.bcr.ContactGroupInfo
+import com.chiller3.bcr.ContactInfo
+import com.chiller3.bcr.GroupLookup
 import com.chiller3.bcr.Preferences
-import com.chiller3.bcr.findContactByLookupKey
-import com.chiller3.bcr.findContactsByUri
+import com.chiller3.bcr.getContactByLookupKey
+import com.chiller3.bcr.getContactGroupById
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
-sealed class DisplayedRecordRule : Comparable<DisplayedRecordRule> {
-    abstract var record: Boolean
-
-    /**
-     * [Contact] comes first, sorted by display name, followed by [UnknownCalls] and [AllCalls].
-     */
-    override fun compareTo(other: DisplayedRecordRule): Int {
-        when (this) {
-            is AllCalls -> {
-                return when (other) {
-                    is AllCalls -> record.compareTo(other.record)
-                    else -> 1
-                }
-            }
-            is UnknownCalls -> {
-                return when (other) {
-                    is UnknownCalls -> record.compareTo(other.record)
-                    is AllCalls -> -1
-                    is Contact -> 1
-                }
-            }
-            is Contact -> {
-                return when (other) {
-                    is Contact -> compareValuesBy(
-                        this,
-                        other,
-                        { it.displayName },
-                        { it.lookupKey },
-                        { it.record },
-                    )
-                    else -> -1
-                }
-            }
-        }
-    }
-
-    data class AllCalls(override var record: Boolean) : DisplayedRecordRule()
-
-    data class UnknownCalls(override var record: Boolean) : DisplayedRecordRule()
-
-    data class Contact(
-        val lookupKey: String,
-        val displayName: String?,
-        override var record: Boolean,
-    ) : DisplayedRecordRule()
-}
-
-sealed class Message {
-    object ShowHelp : Message()
-
-    object RuleAdded : Message()
-
-    object RuleExists : Message()
-}
+data class DisplayableRules(
+    val rules: List<RecordRule>,
+    val contacts: Map<String, ContactInfo?>,
+    val groups: Map<Long, ContactGroupInfo?>,
+)
 
 class RecordRulesViewModel(application: Application) : AndroidViewModel(application) {
     private val prefs = Preferences(getApplication())
 
-    private val _messages = MutableStateFlow<List<Message>>(emptyList())
-    val messages: StateFlow<List<Message>> = _messages
+    private val _rules =
+        MutableStateFlow<DisplayableRules>(DisplayableRules(emptyList(), emptyMap(), emptyMap()))
+    val rules = _rules.asStateFlow()
 
-    private val _rules = MutableStateFlow<List<DisplayedRecordRule>>(emptyList())
-    val rules: StateFlow<List<DisplayedRecordRule>> = _rules
+    private val rulesMutex = Mutex()
 
     init {
-        if (!prefs.recordRulesHelpShown) {
-            showHelp()
-        }
-
         refreshRules()
-    }
-
-    fun acknowledgeFirstMessage() {
-        _messages.update { it.drop(1) }
     }
 
     private fun refreshRules() {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                val rawRules = prefs.recordRules ?: Preferences.DEFAULT_RECORD_RULES
-                val displayRules = rawRules.map { rule ->
-                    when (rule) {
-                        is RecordRule.AllCalls -> DisplayedRecordRule.AllCalls(rule.record)
-                        is RecordRule.UnknownCalls -> DisplayedRecordRule.UnknownCalls(rule.record)
-                        is RecordRule.Contact -> DisplayedRecordRule.Contact(
-                            rule.lookupKey,
-                            getContactDisplayName(rule.lookupKey),
-                            rule.record,
-                        )
+                rulesMutex.withLock {
+                    val rules = prefs.recordRules ?: Preferences.DEFAULT_RECORD_RULES
+                    val contacts = hashMapOf<String, ContactInfo?>()
+                    val groups = hashMapOf<Long, ContactGroupInfo?>()
+
+                    for (rule in rules) {
+                        when (val n = rule.callNumber) {
+                            is RecordRule.CallNumber.Contact -> {
+                                if (n.lookupKey !in contacts) {
+                                    contacts[n.lookupKey] = getContact(n.lookupKey)
+                                }
+                            }
+                            is RecordRule.CallNumber.ContactGroup -> {
+                                // We're not persisting anything here. Keying by row ID is
+                                // sufficient.
+                                if (n.rowId !in groups) {
+                                    groups[n.rowId] = getContactGroup(n.rowId, n.sourceId)
+                                }
+                            }
+                            else -> {}
+                        }
                     }
-                }
 
-                // Update and re-save the rules since the display name may have changed, resulting
-                // in a new sort order.
-                updateAndSaveRules {
-                    displayRules
+                    _rules.update { DisplayableRules(rules, contacts, groups) }
                 }
             }
         }
     }
 
-    private fun saveRules(newRules: List<DisplayedRecordRule>) {
-        val rawRules = newRules.map { displayedRule ->
-            when (displayedRule) {
-                is DisplayedRecordRule.AllCalls ->
-                    RecordRule.AllCalls(displayedRule.record)
-                is DisplayedRecordRule.UnknownCalls ->
-                    RecordRule.UnknownCalls(displayedRule.record)
-                is DisplayedRecordRule.Contact ->
-                    RecordRule.Contact(displayedRule.lookupKey, displayedRule.record)
-            }
-        }
-
-        if (rawRules == Preferences.DEFAULT_RECORD_RULES) {
-            prefs.recordRules = null
-        } else {
-            prefs.recordRules = rawRules
-        }
-    }
-
-    private fun updateAndSaveRules(
-        block: (old: List<DisplayedRecordRule>) -> List<DisplayedRecordRule>,
-    ) {
-        _rules.update {
-            val newRules = block(it).sorted()
-            saveRules(newRules)
-            newRules
-        }
-    }
-
-    private fun getContactDisplayName(lookupKey: String): String? {
+    private fun getContact(lookupKey: String): ContactInfo? {
         if (getApplication<Application>().checkSelfPermission(Manifest.permission.READ_CONTACTS)
             != PackageManager.PERMISSION_GRANTED) {
             return null
         }
 
         return try {
-            findContactByLookupKey(getApplication(), lookupKey)?.displayName
+            getContactByLookupKey(getApplication(), lookupKey)
         } catch (e: Exception) {
             Log.w(TAG, "Failed to look up contact", e)
             null
         }
     }
 
-    fun addContactRule(uri: Uri) {
+    private fun getContactGroup(rowId: Long, sourceId: String?): ContactGroupInfo? {
+        if (getApplication<Application>().checkSelfPermission(Manifest.permission.READ_CONTACTS)
+            != PackageManager.PERMISSION_GRANTED) {
+            return null
+        }
+
+        val groupLookup = if (sourceId != null) {
+            GroupLookup.SourceId(sourceId)
+        } else {
+            GroupLookup.RowId(rowId)
+        }
+
+        return try {
+            getContactGroupById(getApplication(), groupLookup)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to look up contact group", e)
+            null
+        }
+    }
+
+    fun addRule(newRule: RecordRule) {
+        val newRules = arrayListOf(newRule)
+        newRules.addAll(rules.value.rules)
+        replaceRules(newRules)
+    }
+
+    fun replaceRule(position: Int, newRule: RecordRule) {
+        val newRules = rules.value.rules.mapIndexed { i, rule ->
+            if (i == position) {
+                newRule
+            } else {
+                rule
+            }
+        }
+        replaceRules(newRules)
+    }
+
+    fun replaceRules(newRules: List<RecordRule>) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                val contact = try {
-                    findContactsByUri(getApplication(), uri).asSequence().firstOrNull()
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to query contact at $uri", e)
-                    return@withContext
-                }
-                if (contact == null) {
-                    Log.w(TAG, "Contact not found at $uri")
-                    return@withContext
-                }
-
-                val oldRules = rules.value
-                val existingRule = oldRules.find {
-                    it is DisplayedRecordRule.Contact && it.lookupKey == contact.lookupKey
-                }
-
-                if (existingRule != null) {
-                    _messages.update { it + Message.RuleExists }
-                } else {
-                    val newRules = ArrayList(rules.value)
-                    newRules.add(
-                        DisplayedRecordRule.Contact(
-                            contact.lookupKey,
-                            contact.displayName,
-                            true
-                        )
-                    )
-
-                    updateAndSaveRules { newRules }
-
-                    _messages.update { it + Message.RuleAdded }
-                }
-            }
-        }
-    }
-
-    fun setRuleRecord(index: Int, record: Boolean) {
-        updateAndSaveRules {
-            it.mapIndexed { i, displayedRule ->
-                if (i == index) {
-                    when (displayedRule) {
-                        is DisplayedRecordRule.AllCalls -> displayedRule.copy(record = record)
-                        is DisplayedRecordRule.UnknownCalls -> displayedRule.copy(record = record)
-                        is DisplayedRecordRule.Contact -> displayedRule.copy(record = record)
+                rulesMutex.withLock {
+                    if (newRules == Preferences.DEFAULT_RECORD_RULES) {
+                        Log.d(TAG, "New rules match defaults; clearing explicit settings")
+                        prefs.recordRules = null
+                    } else {
+                        Log.d(TAG, "New rules: $newRules")
+                        prefs.recordRules = newRules
                     }
-                } else {
-                    displayedRule
+
+                    refreshRules()
                 }
             }
         }
-    }
-
-    fun deleteRule(index: Int) {
-        updateAndSaveRules {
-            it.filterIndexed { i, _ -> i != index }
-        }
-    }
-
-    fun showHelp() {
-        _messages.update { it + Message.ShowHelp }
-    }
-
-    fun helpDismissed() {
-        prefs.recordRulesHelpShown = true
     }
 
     fun reset() {
-        prefs.recordRules = null
-        prefs.recordRulesHelpShown = false
-        refreshRules()
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                rulesMutex.withLock {
+                    prefs.recordRules = null
+                    refreshRules()
+                }
+            }
+        }
     }
 
     companion object {

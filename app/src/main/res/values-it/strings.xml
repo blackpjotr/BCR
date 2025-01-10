@@ -1,0 +1,253 @@
+<resources>
+    <string name="app_name_full">Basic Call Recorder</string>
+
+    <!-- Preference headers -->
+    <string name="pref_header_general">Generale</string>
+    <string name="pref_header_about">Informazioni</string>
+
+    <!-- General preferences -->
+    <string name="pref_call_recording_name">Registrazione chiamate</string>
+    <string name="pref_call_recording_desc">Registra le chiamate in entrata e in uscita. Sono richiesti i permessi per accedere al microfono e le notifiche per registrare in background.</string>
+
+    <string name="pref_record_rules_name">Regole per registrazione automatica</string>
+    <string name="pref_record_rules_desc">Configura quali chiamate dovrebbero essere automaticamente registrate.</string>
+
+    <string name="pref_output_dir_name">Cartella</string>
+    <string name="pref_output_dir_desc">Scegli una cartella in cui conservare le regitrazioni. Tieni premuto per mostrare il file manager.</string>
+
+    <string name="pref_output_format_name">Formato output</string>
+    <string name="pref_output_format_desc">Seleziona un formato di encoding per le registrazioni.</string>
+
+    <string name="pref_min_duration_name">Durata minima registrazione</string>
+    <plurals name="pref_min_duration_desc">
+        <item quantity="one">Conserva registrazioni lunghe almeno %d secondo.</item>
+        <item quantity="other">Conserva registrazioni lunghe almeno %d secondi.</item>
+    </plurals>
+    <string name="pref_min_duration_desc_zero">Conserva registrazioni di qualsiasi lunghezza.</string>
+
+    <string name="pref_inhibit_batt_opt_name">Disabilita l\'ottimizzazione della batteria</string>
+    <string name="pref_inhibit_batt_opt_desc">Riduce le chance che l\'app sia killata dal sistema.</string>
+
+    <string name="pref_write_metadata_name">Scrivi un file con i metadati</string>
+    <string name="pref_write_metadata_desc">Crea un file JSON contenente i dettagli sulla chiamata insieme al file audio.</string>
+
+    <string name="pref_record_telecom_apps_name">Registra le app integrate nelle telecomunicazioni</string>
+    <string name="pref_record_telecom_apps_desc">Registra le chiamate da app di terze parti che si integrano con il sistema di telecomunicazioni Android. Le registrazioni di queste chiamate conterranno probabilmente solo silenzio.</string>
+
+    <string name="pref_record_dialing_state_name">Registra le chiamate prima della connessione</string>
+    <string name="pref_record_dialing_state_desc">Per le chiamate in uscita, avvia la registrazione non appena inizia la composizione del numero, anziché attendere che la chiamata venga connessa.</string>
+
+    <!-- About "preference" -->
+    <string name="pref_version_name">Versione</string>
+
+    <!-- Debug preferences -->
+    <string name="pref_force_direct_boot_name">Forza la modalità di avvio diretto</string>
+    <string name="pref_force_direct_boot_desc">Immagina che il dispositivo si trovi nello stato precedente al primo sblocco per effettuare il test.</string>
+
+    <string name="pref_migrate_direct_boot_name">Migrazione delle registrazioni di avvio diretto</string>
+    <string name="pref_migrate_direct_boot_desc">Migra le registrazioni effettuate prima del primo sblocco. Normalmente ciò avviene automaticamente dopo il primo sblocco.</string>
+
+    <string name="pref_save_logs_name">Salva log</string>
+    <string name="pref_save_logs_desc">Salva i log di logcat in un file.</string>
+
+    <!-- Pick contact group activity -->
+    <string name="pick_contact_group_title">Seleziona il gruppo di contatti</string>
+    <string name="pick_contact_group_local_group">Gruppo locale</string>
+
+    <!-- Title of the preference category holding the "Add new rule" option and the list of record rules. -->
+    <string name="pref_header_rules">Regole</string>
+    <!-- Message shown above the record rules list that indicates what rules do and how to interact with the list UI. -->
+    <string name="record_rules_info">Le regole determinano quale azione eseguire per ogni chiamata corrispondente. Sono processate dall\'alto verso il basso finché una corrispondenza viene trovata. Tocca e tieni premuto per riordinare le regole oppure scorri per eliminarle.</string>
+    <!-- Title of preference option for adding a new record rule. -->
+    <string name="pref_add_new_rule_name">Aggiungi nuova regola</string>
+    <!-- Description of preference option for adding a new record rule. -->
+    <string name="pref_add_new_rule_desc">Aggiungi una nuova regola per stabilire l\'azione da eseguire per la chiamata corrispondente.</string>
+    <!-- Numeric title for every custom rule (excluding the default rule). The placeholder value (Arabic numerals) is a number starting at 1. -->
+    <string name="record_rules_list_custom_name">Regola %d</string>
+    <!-- Title for the default/fallback rule at the bottom of the list. -->
+    <string name="record_rules_list_default_name">Regola predefinita</string>
+    <!-- Accessibility option to move a rule up by one spot in the list. -->
+    <string name="record_rules_list_action_move_up">Sposta regola in alto</string>
+    <!-- Accessibility option to move a rule down by one spot in the list. -->
+    <string name="record_rules_list_action_move_down">Sposta regola in basso</string>
+    <!-- Accessibility option to remove a rule. -->
+    <string name="record_rules_list_action_remove">Elimina regola</string>
+
+    <!-- Button in the record rule editor to select a different contact. -->
+    <string name="record_rule_editor_change_contact">Modifica contatto</string>
+    <!-- Button in the record rule editor to select a different contact group. -->
+    <string name="record_rule_editor_change_contact_group">Modifica gruppo contatti</string>
+
+    <!-- Title of the record rule editor section for configuring the call number to match. -->
+    <string name="record_rule_number_title">Numero telefonico</string>
+    <!-- Text for the UI chip to select this element in the rule editor. The text should be as short as possible. -->
+    <string name="record_rule_number_any_chip">Qualsiasi</string>
+    <!-- Text for the UI chip to select this element in the rule editor. The text should be as short as possible. -->
+    <string name="record_rule_number_unknown_chip">Sconosciuto</string>
+    <!-- Text for the UI chip to select this element in the rule editor. The text should be as short as possible. This represents contact rules as a category, not a specific contact. -->
+    <string name="record_rule_number_contact_chip">Contatto</string>
+    <!-- Text for the UI chip to select this element in the rule editor. The text should be as short as possible. This represents contact group rules as a category, not a specific contact group. -->
+    <string name="record_rule_number_contact_group_chip">Gruppo contatti</string>
+    <!-- Summary shown in the record rules list descriptions. This should include a "Match: " prefix for visual consistency. -->
+    <string name="record_rule_number_unknown_summary">Corrispondenza: Numeri sconosciuti</string>
+    <!-- Summary shown in the record rules list descriptions. This intentionally has no "Match: " prefix because it already has another prefix. When the contacts permission is denied, this will display an internal contact ID instead of the contact name. -->
+    <string name="record_rule_number_contact_summary">Contatto: %s</string>
+    <!-- Summary shown in the record rules list descriptions. This intentionally has no "Match: " prefix because it already has another prefix. This variant is only used when the contacts permission is denied and only the group ID is available (not the group name or account). -->
+    <string name="record_rule_number_contact_group_unknown_summary">Gruppo contatti: %s</string>
+    <!-- Summary shown in the record rules list descriptions. This intentionally has no "Match: " prefix because it already has another prefix. -->
+    <string name="record_rule_number_contact_group_with_account_summary">Gruppo contatti: %1$s (%2$s)</string>
+
+    <!-- Title of the record rule editor section for configuring the type of call to match. -->
+    <string name="record_rule_type_title">Tipo di chiamata</string>
+    <!-- Text for the UI chip to select this element in the rule editor. The text should be as short as possible. -->
+    <string name="record_rule_type_any_chip">Qualsiasi</string>
+    <!-- Text for the UI chip to select this element in the rule editor. The text should be as short as possible. -->
+    <string name="record_rule_type_incoming_chip">In entrata</string>
+    <!-- Text for the UI chip to select this element in the rule editor. The text should be as short as possible. -->
+    <string name="record_rule_type_outgoing_chip">In uscita</string>
+    <!-- Text for the UI chip to select this element in the rule editor. The text should be as short as possible. -->
+    <string name="record_rule_type_conference_chip">Conferenza</string>
+    <!-- Summary shown in the record rules list descriptions. This should include a "Type: " prefix for visual consistency. -->
+    <string name="record_rule_type_incoming_summary">Tipo: In entrata</string>
+    <!-- Summary shown in the record rules list descriptions. This should include a "Type: " prefix for visual consistency. -->
+    <string name="record_rule_type_outgoing_summary">Tipo: In uscita</string>
+    <!-- Summary shown in the record rules list descriptions. This should include a "Type: " prefix for visual consistency. -->
+    <string name="record_rule_type_conference_summary">Tipo: Conferenza</string>
+
+    <!-- Title of the record rule editor section for configuring which SIM slot to match. -->
+    <string name="record_rule_sim_title">Slot SIM</string>
+    <!-- Text for the UI chip to select this element in the rule editor. The text should be as short as possible. -->
+    <string name="record_rule_sim_any_chip">Qualsiasi</string>
+    <!-- Text for the UI chip to select a specific SIM slot in the rule editor. The placeholder value (Arabic numerals) is a number starting at 1. -->
+    <string name="record_rule_sim_specific_chip">SIM %d</string>
+    <!-- Summary shown in the record rules list descriptions. This should have a prefix, like other summary lines, for visual consistency. The placeholder value (Arabic numerals) is a number starting at 1. -->
+    <string name="record_rule_sim_specific_summary">Slot SIM: %d</string>
+
+    <!-- Title of the record rule editor section to configure the action to take when all conditions match. -->
+    <string name="record_rule_action_title">Azione</string>
+    <!-- Text for the UI chip to select this element in the rule editor. The text should be as short as possible. -->
+    <string name="record_rule_action_save_chip">Salva</string>
+    <!-- Text for the UI chip to select this element in the rule editor. The text should be as short as possible. -->
+    <string name="record_rule_action_discard_chip">Scarta</string>
+    <!-- Text for the UI chip to select this element in the rule editor. The text should be as short as possible. -->
+    <string name="record_rule_action_ignore_chip">Ignora</string>
+    <!-- Description shown for this action in the rule editor. The text can be as verbose as necessary. -->
+    <string name="record_rule_action_save_desc">Salva la registrazione. La registrazione potrà essere contrassegnata per l\'eliminazione al termine della chiamata tramite la notifica mostrata durante la chiamata.</string>
+    <!-- Description shown for this action in the rule editor. The text can be as verbose as necessary. -->
+    <string name="record_rule_action_discard_desc">Scarta la registrazione al termine della chiamata. La registrazione potrà essere conservata tramite la notifica mostrata durante la chiamata.</string>
+    <!-- Description shown for this action in the rule editor. The text can be as verbose as necessary. -->
+    <string name="record_rule_action_ignore_desc">Ignora completamente la chiamata. La chiamata non sarà registrata e non sarà possibile avviare la registrazione durante la chiamata.</string>
+    <!-- Summary shown in the record rules list descriptions. This should include a "Action: " prefix for visual consistency. -->
+    <string name="record_rule_action_save_summary">Azione: Salva la registrazione</string>
+    <!-- Summary shown in the record rules list descriptions. This should include a "Action: " prefix for visual consistency. -->
+    <string name="record_rule_action_discard_summary">Azione: Scarta la registrazione</string>
+    <!-- Summary shown in the record rules list descriptions. This should include a "Action: " prefix for visual consistency. -->
+    <string name="record_rule_action_ignore_summary">Azione: Ignora la chiamata</string>
+
+    <!-- Output directory bottom sheet -->
+    <string name="output_dir_bottom_sheet_change_dir">Cambia cartella</string>
+    <string name="output_dir_bottom_sheet_filename_template">Modello nome file</string>
+    <string name="output_dir_bottom_sheet_edit_template">Modifica modello</string>
+    <string name="output_dir_bottom_sheet_file_retention">Ritenzione file</string>
+    <string name="output_dir_bottom_sheet_edit_retention">Modifica ritenzione</string>
+    <string name="retention_keep_all">Mantieni tutto</string>
+    <plurals name="retention_days">
+        <item quantity="one">Mantieni per %d giorno</item>
+        <item quantity="other">Mantieni per %d giorni</item>
+    </plurals>
+    <string name="retention_unusable">La ritenzione file è disabilitata perché il template per il nome file non è compatibile con questa funzione.</string>
+
+    <!-- Output format bottom sheet -->
+    <string name="output_format_bottom_sheet_output_format">Formato audio</string>
+    <string name="output_format_bottom_sheet_compression_level">Livello di compressione</string>
+    <string name="output_format_bottom_sheet_bitrate">Velocità in bit</string>
+    <string name="output_format_bottom_sheet_sample_rate">Frequenza di campionamento</string>
+    <string name="output_format_bottom_sheet_custom_param">Personalizzato</string>
+
+    <string name="bottom_sheet_reset">Ripristina alle impostazioni predefinite</string>
+
+    <!-- Filename template dialog -->
+    <string name="filename_template_dialog_title">Template nome file</string>
+    <!-- NOTE: For the "supported_vars" annotation, the content MUST not be empty. Any string can go inside of it as a placeholder. -->
+    <string name="filename_template_dialog_message">Inserisci un template personalizzato per il nome file. Le variabili sono specificate all\'interno di parentesi graffe (eg. <annotation type="template">{var}</annotation>). Le riserve sono specificate tra parentesi quadre (eg. <annotation type="template">[{contact_name}|Sconosciuto]</annotation>).\n\nVariabili supportate: <annotation type="supported_vars">PLACEHOLDER</annotation>. Guarda <annotation type="template_docs">la documentazione</annotation> per una completa descrizione della sintassi.</string>
+    <string name="filename_template_dialog_warning_subdirectories">A causa delle scarse performance dell\'Android Storage Access Framework\'s, usare le sottocartelle (il carattere <annotation type="template">/</annotation>) potrebbe causare un significativo ritardo quando si salva la registrazione su alcuni dispositivi. Il ritardo avverrà alla fine della chiamata e non dovrebbe risultare in nessuna perdita di audio della chiamata.</string>
+    <string name="filename_template_dialog_error_empty">Il template non può essere vuoto</string>
+    <string name="filename_template_dialog_error_unknown_variable">Variabile sconosciuta: <annotation type="template">PLACEHOLDER</annotation></string>
+    <string name="filename_template_dialog_error_has_argument">La variabile non può avere un argomento: <annotation type="template">PLACEHOLDER</annotation></string>
+    <string name="filename_template_dialog_error_invalid_argument">Argomento variabile non valido: <annotation type="template">PLACEHOLDER</annotation></string>
+    <string name="filename_template_dialog_error_invalid_syntax">La sintassi del template non è valida</string>
+    <string name="filename_template_dialog_action_reset_to_default">Ripristina alle impostazioni predefinite</string>
+
+    <!-- File retention dialog -->
+    <string name="file_retention_dialog_title">@string/output_dir_bottom_sheet_file_retention</string>
+    <string name="file_retention_dialog_message">Inserisci il numero di giorni per i quali mantenere le registrazioni.</string>
+    <string name="file_retention_error_too_large">Il numero è troppo grande</string>
+
+    <!-- Format parameter dialog -->
+    <string name="format_param_dialog_title">Parametro personalizzato</string>
+    <string name="format_param_dialog_message">Inserisci un valore nel range [%1$s, %2$s].</string>
+
+    <!-- Format sample rate dialog -->
+    <string name="format_sample_rate_dialog_title">Frequenza di campionamento personalizzata</string>
+    <string name="format_sample_rate_dialog_message_desc">Inserisci una frequenza di campionamento compresa in uno di questi intervalli:</string>
+    <string name="format_sample_rate_dialog_message_range">[%1$s, %2$s]</string>
+
+    <!-- Format parameter -->
+    <string name="format_param_bitrate_bps">%s bps</string>
+    <string name="format_param_bitrate_kbps">%s kbps</string>
+    <string name="format_param_compression_level">Livello %s</string>
+
+    <!-- Format sample rate -->
+    <string name="format_sample_rate">%s Hz</string>
+
+    <!-- Min duration dialog -->
+    <string name="min_duration_dialog_title">@string/pref_min_duration_name</string>
+    <string name="min_duration_dialog_message">Inserisci la durata minima di conservazione di una registrazione, escludendo pause e attesa delle chiamate. Questa può sempre essere ignorata durante una chiamata dalla notifica.</string>
+    <plurals name="min_duration_dialog_seconds">
+        <item quantity="one">%d secondo</item>
+        <item quantity="other">%d secondi</item>
+    </plurals>
+
+    <!-- Snackbar alerts -->
+    <string name="alert_logcat_success">Registri salvati correttamente su %1$s</string>
+    <string name="alert_logcat_failure">Impossibile salvare i registri su %1$s: %2$s</string>
+    <string name="alert_contact_group_query_failure">Impossibile interrogare i gruppi di contatti: %1$s</string>
+
+    <!-- Notifications -->
+    <string name="notification_channel_persistent_name">Servizi in background</string>
+    <string name="notification_channel_persistent_desc">Notifica persistente per registrare le chiamate</string>
+    <string name="notification_channel_failure_name">Failure alerts</string>
+    <string name="notification_channel_failure_desc">Avvisi per errori durante la registrazione della chiamata</string>
+    <string name="notification_channel_success_name">Avvisi di successo</string>
+    <string name="notification_channel_success_desc">Avvisi per la registrazione chiamata a buon fine</string>
+    <string name="notification_channel_silence_name">Avvisi di puro silenzio</string>
+    <string name="notification_channel_silence_desc">Avvisa se le registrazioni delle chiamate contengono puro silenzio</string>
+    <string name="notification_direct_boot_migration_failed">Impossibile migrare le registrazioni</string>
+    <string name="notification_direct_boot_migration_error">Alcune registrazioni salvate prima dello sblocco iniziale del dispositivo non potevano essere spostate nella directory di output.</string>
+    <string name="notification_recording_initializing">Inizializzazione registrazione chiamata</string>
+    <string name="notification_recording_in_progress">Registrazione chiamata in corso</string>
+    <string name="notification_recording_finalizing">Finalizzando registrazione chiamata</string>
+    <string name="notification_recording_paused">Registrazione chiamata in pausa</string>
+    <string name="notification_recording_on_hold">Registrazione in attesa</string>
+    <string name="notification_recording_failed">Registrazione chiamata fallita</string>
+    <string name="notification_recording_succeeded">Chiamata registrata correttamente</string>
+    <string name="notification_message_delete_at_end">La registrazione sarà cancellata alla fine della chiamata. Premi ripristina per mantenere la registrazione.</string>
+    <plurals name="notification_message_delete_at_end_too_short">
+        <item quantity="one">La registrazione verrà eliminata alla fine della chiamata se è più breve di %d secondo. Tocca Ripristina per conservare la registrazione.</item>
+        <item quantity="other">La registrazione verrà eliminata alla fine della chiamata se è più breve di %d secondi. Tocca Ripristina per conservare la registrazione.</item>
+    </plurals>
+    <string name="notification_internal_android_error">La registrazione è fallita a causa di un componente interno di Android  (%s). Questo dispositivo o firmware potrebbe essere non supportare la registrazione delle chiamate.</string>
+    <string name="notification_pure_silence_error">La registrazione è stata scartata perché l\'audio era completamente silenzioso. Questo dispositivo potrebbe non supportare la registrazione delle chiamate associate all\'app \'%s\'.</string>
+    <string name="notification_action_open">Apri</string>
+    <string name="notification_action_share">Condividi</string>
+    <string name="notification_action_delete">Cancella</string>
+    <string name="notification_action_restore">Ripristina</string>
+    <string name="notification_action_pause">Pausa</string>
+    <string name="notification_action_resume">Riprendi</string>
+
+    <!-- Quick settings tile -->
+    <string name="quick_settings_label">Registrazione chiamate</string>
+
+    <!-- Snackbar alerts -->
+    <string name="documentsui_not_found">Il file manager di Android (DocumentsUI) non è disponibile.</string>
+</resources>

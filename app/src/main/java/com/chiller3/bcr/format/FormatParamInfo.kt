@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2024 Andrew Gunnerson
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
 @file:OptIn(ExperimentalUnsignedTypes::class)
 
 package com.chiller3.bcr.format
@@ -53,12 +58,17 @@ class RangedParamInfo(
         when (type) {
             RangedParamType.CompressionLevel ->
                 context.getString(R.string.format_param_compression_level, param.toString())
-            RangedParamType.Bitrate ->
-                context.getString(R.string.format_param_bitrate, (param / 1_000U).toString())
+            RangedParamType.Bitrate -> {
+                if (param % 1_000U == 0U) {
+                    context.getString(R.string.format_param_bitrate_kbps, (param / 1_000U).toString())
+                } else {
+                    context.getString(R.string.format_param_bitrate_bps, param.toString())
+                }
+            }
         }
 }
 
-object NoParamInfo : FormatParamInfo(0u, uintArrayOf()) {
+data object NoParamInfo : FormatParamInfo(0u, uintArrayOf()) {
     override fun validate(param: UInt) {
         // Always valid
     }

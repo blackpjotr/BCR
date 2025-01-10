@@ -2,8 +2,8 @@
 
 <img src="app/images/icon.svg" alt="app icon" width="72" />
 
-![latest release badge](https://img.shields.io/github/v/release/chenxiaolong/BCR?sort=semver)
-![license badge](https://img.shields.io/github/license/chenxiaolong/BCR)
+[![latest release badge](https://img.shields.io/github/v/release/chenxiaolong/BCR?sort=semver)](https://github.com/chenxiaolong/BCR/releases/latest)
+[![license badge](https://img.shields.io/github/license/chenxiaolong/BCR)](./LICENSE)
 
 BCR is a simple Android call recording app for rooted devices or devices running custom firmware. Once enabled, it stays out of the way and automatically records incoming and outgoing calls in the background.
 
@@ -11,19 +11,21 @@ BCR is a simple Android call recording app for rooted devices or devices running
 
 ## Features
 
-* Supports Android 9 through 13
+* Supports Android 9 and newer
 * Supports output in various formats:
   * OGG/Opus - Lossy, smallest files, default on Android 10+
   * M4A/AAC - Lossy, smaller files, default on Android 9
   * FLAC - Lossless, larger files
   * WAV/PCM - Lossless, largest files, least CPU usage
 * Supports Android's Storage Access Framework (can record to SD cards, USB devices, etc.)
-* Per-contact auto-record rules
+* Direct boot aware (records calls prior to first unlock after a reboot)
+* Auto-record rules
 * Quick settings toggle
 * Material You dynamic theming
 * No persistent notification unless a recording is in progress
 * No network access permission
 * Works with call screening on Pixel devices (records the caller, but not the automated system)
+* Supports both Magisk and KernelSU
 
 ## Non-features
 
@@ -41,11 +43,11 @@ As the name alludes, BCR intends to be a basic as possible. The project will hav
 
 2. Install BCR as a system app.
 
-    * **For devices rooted with Magisk**, simply flash the zip as a Magisk module from within the Magisk app.
+    * **For devices rooted with Magisk/KernelSU**, simply flash the zip as a Magisk/KernelSU module from within the respective application.
         * **For OnePlus and Realme devices running the stock firmware (or custom firmware based on the stock firmware)**, also extract the `.apk` from the zip and install it manually before rebooting. This is necessary to work around a bug in the firmware where the app data directory does not get created, causing BCR to open up to a blank screen.
 
     * **For unrooted custom firmware**, flash the zip while booted into recovery.
-        * **NOTE**: The `READ_CALL_LOG` permission is hard restricted in Android 10+, which prevents it from being granted, even via Android's settings. To remove this restriction, run via adb:
+        * **NOTE**: The `READ_CALL_LOG` permission is hard restricted in Android 10+, which prevents it from being granted, even via Android's settings. To remove this restriction, run via adb after rebooting back into Android:
           ```bash
           # If rooted, run inside of `su`:
           CLASSPATH=/system/priv-app/com.chiller3.bcr/app-release.apk app_process / com.chiller3.bcr.standalone.RemoveHardRestrictionsKt
@@ -58,11 +60,13 @@ As the name alludes, BCR intends to be a basic as possible. The project will hav
 
 3. Reboot and open BCR.
 
+    If other call recorders are installed, make sure to disable their phone call recording functionality. On most devices, a phone call cannot be recorded by two apps at the same time. However, it is fine to have BCR record phone calls and another app record eg. VOIP calls.
+
 4. Enable call recording and pick an output directory.
 
     If no output directory is selected or if the output directory is no longer accessible, then recordings will be saved to `/sdcard/Android/data/com.chiller3.bcr/files`. Note that on Android 12+, `/sdcard/Android/data/` is only accessible via USB or DocumentsUI (AOSP's built in file manager).
 
-    When enabling call recording the first time, BCR will prompt for microphone, notification (Android 13+), call log, contacts, and phone permissions. Only microphone and notification permissions are required basic call recording functionality. If additional permissions are granted, more information is added to the output filename. For example, the contacts permission will allow the contact name to be added to the filename.
+    When enabling call recording the first time, BCR will prompt for microphone, notification (Android 13+), call log, contacts, and phone permissions. Only microphone and notification permissions are required for basic call recording functionality. If additional permissions are granted, more information is added to the output filename. For example, the contacts permission will allow the contact name to be added to the filename.
 
     See the [permissions section](#permissions) below for more details about the permissions.
 
@@ -70,6 +74,26 @@ As the name alludes, BCR intends to be a basic as possible. The project will hav
 
     * If installed via Magisk, the module can be updated right from Magisk Manager's modules tab. Flashing the new version in Magisk manually also works just as well.
     * The `.apk` can also be extracted from the zip and be directly installed. With this method, the old version exists as a system app and the new version exists as a user-installed update to the system app. This method is more convenient if BCR is baked into the Android firmware image.
+
+## Recording announcement
+
+Unlike the built-in call recording functionality of the preinstalled dialer app on some devices, BCR does not announce that the call is being recorded to the other party. BCR never outputs audio of any kind to the call audio stream.
+
+When BCR is enabled, avoid using the the dialer's built-in call recorder at all. There's a very good chance that using it will cause unexpected behavior, like both recordings failing or the dialer announcing that the call is being recorded.
+
+If you live in a jurisdiction where two-party consent is required, you are responsible for informing the other party that the call is being recorded. If needed, auto-record rules can be used to discard recordings by default. However, note that if you choose to preserve the recording during the middle of the call, the recording will contain full call, not just the portion after the other party consented.
+
+## Direct boot
+
+BCR is direct boot aware, meaning that it's capable of running and recording calls before the device is initially unlocked following a reboot. In this state, most of BCR's functionality will still work, aside from features that require the contact list or call log. In practice, this means:
+
+* If auto-record rules are set up, the contact and contact group conditions will not match.
+* It's not possible to manually preserve the recording if an auto-record rule is set to discard it because BCR's notification is not accessible before the initial unlock.
+* The output filename, if using the default template, will only contain the caller ID, not the contact name or call log name.
+
+However, if the device is unlocked before the call ends, then none of these limitations apply.
+
+Note that the output directory is not available before the device is unlocked for the first time. Recordings made while in the state are stored in an internal directory that's not accessible by the user. After the device is unlocked, BCR will move the files to the output directory. This may take a few moments to complete.
 
 ## Permissions
 
@@ -79,15 +103,18 @@ As the name alludes, BCR intends to be a basic as possible. The project will hav
   * Needed to monitor the phone call state for starting and stopping the recording and gathering call information for the output filename.
 * `RECORD_AUDIO` (**must be granted by the user**)
   * Needed to capture the call audio stream.
-* `FOREGROUND_SERVICE` (**automatically granted at install time**)
+* `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MICROPHONE` (**automatically granted at install time**)
   * Needed to run the call recording service.
 * `POST_NOTIFICATIONS` (**must be granted by the user on Android 13+**)
   * Needed to show notifications.
   * A notification is required for running the call recording service in foreground mode or else Android will not allow access to the call audio stream.
 * `READ_CALL_LOG` (**optional**)
   * If allowed, the name as shown in the call log can be added to the output filename.
+  * This is also required to show the correct phone number when using call redirection apps.
 * `READ_CONTACTS` (**optional**)
-  * If allowed, the contact name can be added to the output filename. It also allows auto-record rules to be set per contact.
+  * If allowed, the contact name can be added to the output filename. It also allows auto-record rules to match contacts and contact groups.
+* `RECEIVE_BOOT_COMPLETED`, `FOREGROUND_SERVICE_SPECIAL_USE` (**automatically granted at install time**)
+  * Needed to automatically move recordings made before the initial device unlock to the output directory.
 * `READ_PHONE_STATE` (**optional**)
   * If allowed, the SIM slot for devices with multiple active SIMs is added to the output filename.
 * `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` (**optional**)
@@ -98,6 +125,20 @@ As the name alludes, BCR intends to be a basic as possible. The project will hav
   * If vibration is enabled for BCR's notifications in Android's settings, BCR will perform the vibration. Android itself does not respect the vibration option when a phone call is active.
 
 Note that `INTERNET` is _not_ in the list. BCR does not and will never access the network. BCR will never communicate with other apps either, except if the user explicitly taps on the `Open` or `Share` buttons in the notification shown when a recording completes. In that scenario, the target app is granted access to that single recording only.
+
+## Call redirection
+
+BCR has limited support for call redirection apps, like Google Voice. Redirected calls can be recorded only if the call redirection service uses standard telephone calls behind the scenes (instead of VOIP).
+
+There are several limitations when recording redirected calls compared to regular calls:
+
+* The call must not be a conference call. Otherwise, the filename will only show the call redirection service's proxy phone number.
+* Auto-record rules will not work properly. Redirected calls will never match any rules for specified contacts and will only match the `All other calls` rule.
+* During the call, BCR's notification will only show the call redirection service's proxy phone number.
+* BCR must be granted the call logs permission.
+* The dialer app must put the original phone number into the system call log. The AOSP and Google dialer apps do, but other OEM dialer apps might not.
+
+These limitations exist because when a call is redirected, only the dialer app itself is aware of the original phone number. The Android telephony system is not aware of it. BCR can only find the original phone number by searching the system call log when the dialer adds the entry at the end of the call.
 
 ## Filename template
 
@@ -291,23 +332,7 @@ Both the zip file and the APK contained within are digitally signed. **NOTE**: T
 
 ### Verifying zip file signature
 
-First save the public key to a file that lists which keys should be trusted.
-
-```bash
-echo 'bcr ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDOe6/tBnO7xZhAWXRj3ApUYgn+XZ0wnQiXM8B7tPgv4' > bcr_trusted_keys
-```
-
-Then, verify the signature of the zip file using the list of trusted keys.
-
-```bash
-ssh-keygen -Y verify -f bcr_trusted_keys -I bcr -n file -s BCR-<version>-release.zip.sig < BCR-<version>-release.zip
-```
-
-If the file is successfully verified, the output will be:
-
-```
-Good "file" signature for bcr with ED25519 key SHA256:Ct0HoRyrFLrnF9W+A/BKEiJmwx7yWkgaW/JvghKrboA
-```
+To verify the digital signatures of the downloads, follow [the steps here](https://github.com/chenxiaolong/chenxiaolong/blob/master/VERIFY_SSH_SIGNATURES.md).
 
 ### Verifying apk signature
 

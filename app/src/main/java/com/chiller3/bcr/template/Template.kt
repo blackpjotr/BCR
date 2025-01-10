@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2023-2024 Andrew Gunnerson
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
 package com.chiller3.bcr.template
 
 import com.copperleaf.kudzu.node.chars.CharNode
@@ -398,7 +403,7 @@ class Template(template: String) {
         data class AfterPrefix(val literal: String, val atStart: Boolean) : VariableRefLocation
 
         /** The location of the variable reference is arbitrary (dependent on other variables). */
-        object Arbitrary : VariableRefLocation
+        data object Arbitrary : VariableRefLocation
     }
 
     /**

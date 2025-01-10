@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2024 Andrew Gunnerson
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
 package com.chiller3.bcr.output
 
 import android.content.Context
@@ -23,7 +28,7 @@ sealed interface Retention {
     }
 }
 
-object NoRetention : Retention {
+data object NoRetention : Retention {
     override fun toFormattedString(context: Context): String =
         context.getString(R.string.retention_keep_all)
 

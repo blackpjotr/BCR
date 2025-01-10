@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2023-2024 Andrew Gunnerson
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
 package com.chiller3.bcr.output
 
 import android.content.Context
@@ -311,7 +316,7 @@ class OutputFilenameGenerator(
             .appendOffset("+HHMMss", "+0000")
             .toFormatter()
 
-        private fun splitPath(pathString: String) = pathString
+        fun splitPath(pathString: String) = pathString
             .splitToSequence('/')
             .filter { it.isNotEmpty() && it != "." && it != ".." }
             .toList()

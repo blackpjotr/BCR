@@ -9,7 +9,213 @@
 
 ### Unreleased
 
+* Update Italian translations ([PR #653 @nicorac])
+* Update Hebrew translations ([PR #655 @tzagim])
+
+### Version 1.76
+
+* Update French translations ([PR #651 @NSO73])
+* Assume that `android.hardware.telephony.subscription` is supported on Android 11+ ([Issue #649], [PR #652 @chenxiaolong])
+    * OxygenOS on OnePlus devices supports this feature, but does not declare that it does. This workaround allows features that depend on the SIM slot (eg. SIM slot rules) to work.
+
+### Version 1.75
+
+* New record rules system ([Issue #406], [Issue #509], [Issue #607], [PR #644 @chenxiaolong])
+    * Supports matching call type (incoming, outgoing, conference) and SIM slot
+    * Adds a new option for completely ignoring a call instead of just deferring deletion of the recording until the end of the call
+    * More polished UI for editing and reordering rules
+    * All existing rules are automatically migrated
+* Rebase icon off the latest material call and mic icons ([PR #635 @chenxiaolong])
+* Update Italian translations ([PR #637 @Strange-IPmart])
+* Fix regression from version 1.73 that caused BCR to crash when recording calls in direct boot mode ([Issue #643], [PR #645 @chenxiaolong])
+* Remove migration of the old global sample-rate option ([PR #646 @chenxiaolong])
+  * Folks upgrading from pre-1.62 versions should first upgrade to 1.74 first and then upgrade to this version.
+* Switch to kotlinx-serialization library for writing metadata JSON file ([PR #647 @chenxiaolong])
+* Update dependencies ([PR #648 @chenxiaolong])
+
+### Version 1.74
+
+* Update French translations ([PR #627 @NSO73])
+* Work around crash in Android itself when querying sample rates on older Android versions ([Issue #628], [PR #629 @chenxiaolong])
+* Work around crash when accessing private Android APIs in Android 9 ([Issue #628], [PR #630 @chenxiaolong])
+* Update all dependencies ([PR #631 @chenxiaolong])
+* Work around Android 9 and 10 not knowing the file extension for the `audio/mp4` MIME type ([PR #632 @chenxiaolong])
+
+### Version 1.73
+
+* Update French translations ([PR #615 @NSO73])
+* Add Romanian translations ([PR #613 @gilav23])
+* Add debug option to save log file ([PR #622 @chenxiaolong])
+* Fix another Cursor resource leak ([PR #623 @chenxiaolong])
+* Show error message if contact group picker fails to query the list of groups ([Issue #620], [PR #624 @chenxiaolong])
+* Enable predictive back gestures ([PR #625 @chenxiaolong])
+* Don't fail to populate contact group list when the SOURCE_ID is null ([Issue #620], [PR #626 @chenxiaolong])
+* Add account name to contact group list ([Issue #620], [PR #626 @chenxiaolong])
+
+### Version 1.72
+
+* Add support for specifying a minimum duration for keeping a recording ([Issue #411], [Issue #604], [PR #605 @chenxiaolong])
+* Add support for contact groups in auto-record rules ([Issue #536], [PR #606 @chenxiaolong])
+* Fix Cursor resource leak ([PR #610 @chenxiaolong])
+* Minor notification code cleanup ([PR #611 @chenxiaolong])
+* Update dependencies ([PR #612 @chenxiaolong])
+
+### Version 1.71
+
+* Fix notification not showing after recording to the default output directory ([PR #603 @chenxiaolong])
+
+### Version 1.70
+
+* Fix crash when manually triggering the direct boot file migration via the hidden debug settings ([PR #578 @chenxiaolong])
+* Move pure silence warning notification to a separate notification channel so that it can be disabled ([Issue #579], [PR #583 @chenxiaolong])
+* Update French translations ([PR #590 @NSO73])
+* Target API 35 ([PR #597 @chenxiaolong])
+* Work around OxygenOS on OnePlus devices setting the wrong SELinux label on BCR's data directory, causing settings to be lost ([Issue #582], [Issue #591], [Issue #598], [PR #600 @chenxiaolong])
+
+### Version 1.69
+
+* Switch direct boot file migration service from a foreground service to a background service ([Issue #574], [Issue #576], [PR #577 @chenxiaolong])
+  * This works around Android bugs on some devices that sometimes result in a notification that doesn't auto-dismiss or a crash after a reboot.
+
+### Version 1.68
+
+* Update Russian translations ([PR #571 @bugreportion])
+* Use Material 3 switches for switch preferences ([PR #572 @chenxiaolong])
+* Add support for direct boot ([PR #573 @chenxiaolong])
+  * This allows recording calls from before the device is initially unlocked following a reboot.
+
+### Version 1.67
+
+* Update French translations ([PR #567 @NSO73])
+* Add support for direct installation on devices that use static A/B partitions ([Issue #569], [PR #570 @chenxiaolong])
+
+### Version 1.66
+
+* Add option to start recording an outgoing call while it is still in the `DIALING` state ([Issue #563], [PR #564 @chenxiaolong])
+* Update checksum for `tensorflow-lite-metadata-0.1.0-rc2.pom` dependency ([PR #565 @chenxiaolong])
+
+### Version 1.65
+
+* Prevent addon.d script from being executed during A/B OTA updates when installed as a Magisk module ([PR #558 @harinworks])
+* Log boot script output to logcat ([PR #560 @chenxiaolong])
+* Fix removal of restrictions for `READ_CALL_LOG` permission on Android 14 QPR3 ([PR #561 @chenxiaolong])
+
+### Version 1.64
+
+* Add Arabic and Urdu translations ([PR #550 @TheDeathDragon])
+* Add Japanese translations ([PR #552 @musenq])
+* Fix race condition when adding record rules if BCR was unloaded from memory while a contact was being selected ([Issue #554], [PR #555 @chenxiaolong])
+* Remove unused internal settings field for the disable battery optimizations option ([PR #556 @chenxiaolong])
+
+### Version 1.63
+
+* Fix removal of restrictions for `READ_CALL_LOG` permission on Android 14 QPR2 ([PR #528 @chenxiaolong])
+  * This only affects fresh installs of BCR. Android normally blocks users from granting this permission, even from Android's Settings app. The removal of this restriction now works on Android 14 QPR2 and newer.
+* Update Turkish translations ([PR #521 @symbuzzer])
+* Update Polish translations ([PR #540 @phyrz91])
+* Add Vietnamese translations ([PR #543 @hdzungx])
+* Fix sysconfig file being deleted during OS upgrades when BCR is installed from recovery ([PR #541 @chenxiaolong])
+* Update all dependencies ([PR #529 @chenxiaolong])
+* Update French translations ([PR #548 @NSO73])
+* Work around bug in some custom ROMs where Android sometimes ignores the sysconfig file needed to access hidden/system APIs ([Issue #539], [Issue #546], [PR #549 @chenxiaolong])
+  * This affected BCR installations that were flashed via recovery or bundled with the ROM.
+  * **NOTE**: Folks bundling BCR into their Android builds should remove the sysconfig file as it is no longer necessary.
+
+### Version 1.62
+
+* Automatically detect sample rates supported by the output format's encoder ([Issue #507], [PR #508 @chenxiaolong])
+  * Fixes recording failures on Redmi devices due to the OEM removing support for all non-48kHz sample rates from Android's standard Opus encoder.
+* Fix crash when Android returns a null SubscriptionInfo ([Issue #513], [PR #516 @chenxiaolong])
+  * This can happen for third party applications, like SIP clients, that integrate with Android's telephony framework.
+* Update Turkish translations ([PR #517 @symbuzzer])
+* Disable recording telecom-integrated applications by default ([Issue #513], [PR #518 @chenxiaolong])
+  * This includes apps, like SIP clients, where recording is unlikely to work properly on any device.
+* Discard recordings that contain complete silence ([Issue #513], [PR #519 @chenxiaolong])
+* Fix typo in Italian translations ([PR #522 @nicorac])
+* Update Traditional Chinese (zh-TW) translations ([PR #523 @anenasa])
+
+### Version 1.61
+
+* Update Turkish translations ([PR #503 @symbuzzer])
+* Fix crash if the call log reports an empty phone number for private calls ([Issue #455], [PR #505 @chenxiaolong])
+* Always save log file when an error occurs ([PR #506 @chenxiaolong])
+  * It is no longer necessary to manually enable debug mode unless you also want to save the logs for successful recordings.
+
+### Version 1.60
+
+* Make the sample rate option format-specific instead of global ([PR #496 @chenxiaolong])
+  * The default sample rate is now also 16 kHz for every format that supports it
+* Add support for AMR-WB and AMR-NB ([Issue #264], [PR #497 @chenxiaolong])
+  * The patents have now expired in North America and Europe.
+  * Note that this is a lossy recording even though the raw phone call audio signal is AMR. The modem always decodes the raw AMR audio to PCM. When AMR output in BCR is selected, the PCM audio is reencoded back to AMR.
+
+Behind the scenes changes:
+
+* Fix missing Gradle verification checksums when building from source on non-Linux OSs ([Issue #491], [PR #493 @chenxiaolong])
+* Update dependencies ([PR #498 @chenxiaolong])
+
+### Version 1.59
+
+* Fix removal of Android's call log permission restriction for fresh installs in Android 14 ([PR #481 @chenxiaolong])
+
+### Version 1.58
+
+* Update Polish translations ([PR #476 @phyrz91])
+* Add Italian translations ([PR #480 @DHD2280])
+
+### Version 1.57
+
+* Update Chinese translations ([PR #469 @Pr0pHesyer])
+* Update Portuguese (Portugal) translations ([PR #474 @MicroDJS])
+
+### Version 1.56
+
+* Update Slovak translations ([PR #456 @pvagner])
+* Update all dependencies ([PR #457 @PatrykMis])
+* Update Russian translations ([PR #458 @groozchique])
+* Add Hindi translations and improve documentation ([PR #459 @y0geshx])
+* Update Hebrew translations ([PR #460 @htht2001])
+
+### Version 1.55
+
+* Update Russian translations ([PR #450 @rze0])
+* Update French translations ([PR #453 @NSO73])
+* Enable memory tagging extensions for ARMv9 devices ([PR #454 @chenxiaolong])
+
+### Version 1.54
+
+* Add support for call redirection apps that use regular phone calls behind the scenes, like Google Voice ([Issue #433], [PR #444 @chenxiaolong])
+  * Please see [the documentation for this feature](./README.md#call-redirection) because there are many limitations.
+
+### Version 1.53
+
+It's Android 14 release day! All previous versions of BCR should work on Android 14. This release is just the first one that targets API 34.
+
+Changes:
+
+* Make auto-record rules UI a bit more intuitive ([Issue #429], [PR #430 @chenxiaolong])
+* Update Turkish translations ([PR #434 @symbuzzer])
+* Update dependencies and target API 34 ([PR #401 @chenxiaolong])
+
+### Version 1.52
+
+* Instead of graying out `Disable battery optimizations`, take the user to Android's Settings ([Issue #422], [PR #424 @chenxiaolong])
+  * Android does not provide a way for apps to directly re-enable battery optimizations.
+
+### Version 1.51
+
+* Update Russian translations ([PR #419 @rze0])
+* Add support for direct install from recovery on devices that use A/B and/or dynamic partitions ([Issue #338], [PR #420 @chenxiaolong])
+
+### Version 1.50
+
 * Update Turkish translations ([PR #400 @symbuzzer])
+* Work around gradle dependency verification blocking sources and javadocs from loading in Android Studio ([PR #402 @chenxiaolong])
+* Update Simplified Chinese translations ([PR #404 @Yee2])
+* Update Polish translations ([PR #407 @PatrykMis])
+* Use standard OK/Cancel text from Android's resources ([PR #408 @PatrykMis])
+* Update all dependencies ([PR #414 @PatrykMis])
+* Update Russian translations ([PR #418 @rze0])
 
 ### Version 1.49
 
@@ -481,6 +687,7 @@ Non-user-facing changes:
 [Issue #252]: https://github.com/chenxiaolong/BCR/issues/252
 [Issue #253]: https://github.com/chenxiaolong/BCR/issues/253
 [Issue #260]: https://github.com/chenxiaolong/BCR/issues/260
+[Issue #264]: https://github.com/chenxiaolong/BCR/issues/264
 [Issue #275]: https://github.com/chenxiaolong/BCR/issues/275
 [Issue #288]: https://github.com/chenxiaolong/BCR/issues/288
 [Issue #290]: https://github.com/chenxiaolong/BCR/issues/290
@@ -493,6 +700,7 @@ Non-user-facing changes:
 [Issue #307]: https://github.com/chenxiaolong/BCR/issues/307
 [Issue #314]: https://github.com/chenxiaolong/BCR/issues/314
 [Issue #320]: https://github.com/chenxiaolong/BCR/issues/320
+[Issue #338]: https://github.com/chenxiaolong/BCR/issues/338
 [Issue #350]: https://github.com/chenxiaolong/BCR/issues/350
 [Issue #352]: https://github.com/chenxiaolong/BCR/issues/352
 [Issue #357]: https://github.com/chenxiaolong/BCR/issues/357
@@ -501,6 +709,34 @@ Non-user-facing changes:
 [Issue #380]: https://github.com/chenxiaolong/BCR/issues/380
 [Issue #388]: https://github.com/chenxiaolong/BCR/issues/388
 [Issue #394]: https://github.com/chenxiaolong/BCR/issues/394
+[Issue #406]: https://github.com/chenxiaolong/BCR/issues/406
+[Issue #411]: https://github.com/chenxiaolong/BCR/issues/411
+[Issue #422]: https://github.com/chenxiaolong/BCR/issues/422
+[Issue #429]: https://github.com/chenxiaolong/BCR/issues/429
+[Issue #433]: https://github.com/chenxiaolong/BCR/issues/433
+[Issue #455]: https://github.com/chenxiaolong/BCR/issues/455
+[Issue #491]: https://github.com/chenxiaolong/BCR/issues/491
+[Issue #507]: https://github.com/chenxiaolong/BCR/issues/507
+[Issue #509]: https://github.com/chenxiaolong/BCR/issues/509
+[Issue #513]: https://github.com/chenxiaolong/BCR/issues/513
+[Issue #536]: https://github.com/chenxiaolong/BCR/issues/536
+[Issue #539]: https://github.com/chenxiaolong/BCR/issues/539
+[Issue #546]: https://github.com/chenxiaolong/BCR/issues/546
+[Issue #554]: https://github.com/chenxiaolong/BCR/issues/554
+[Issue #563]: https://github.com/chenxiaolong/BCR/issues/563
+[Issue #569]: https://github.com/chenxiaolong/BCR/issues/569
+[Issue #574]: https://github.com/chenxiaolong/BCR/issues/574
+[Issue #576]: https://github.com/chenxiaolong/BCR/issues/576
+[Issue #579]: https://github.com/chenxiaolong/BCR/issues/579
+[Issue #582]: https://github.com/chenxiaolong/BCR/issues/582
+[Issue #591]: https://github.com/chenxiaolong/BCR/issues/591
+[Issue #598]: https://github.com/chenxiaolong/BCR/issues/598
+[Issue #604]: https://github.com/chenxiaolong/BCR/issues/604
+[Issue #607]: https://github.com/chenxiaolong/BCR/issues/607
+[Issue #620]: https://github.com/chenxiaolong/BCR/issues/620
+[Issue #628]: https://github.com/chenxiaolong/BCR/issues/628
+[Issue #643]: https://github.com/chenxiaolong/BCR/issues/643
+[Issue #649]: https://github.com/chenxiaolong/BCR/issues/649
 [PR #2 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/2
 [PR #4 @EleoXDA]: https://github.com/chenxiaolong/BCR/pull/4
 [PR #7 @marat2509]: https://github.com/chenxiaolong/BCR/pull/7
@@ -694,3 +930,100 @@ Non-user-facing changes:
 [PR #397 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/397
 [PR #398 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/398
 [PR #400 @symbuzzer]: https://github.com/chenxiaolong/BCR/pull/400
+[PR #401 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/401
+[PR #402 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/402
+[PR #404 @Yee2]: https://github.com/chenxiaolong/BCR/pull/404
+[PR #407 @PatrykMis]: https://github.com/chenxiaolong/BCR/pull/407
+[PR #408 @PatrykMis]: https://github.com/chenxiaolong/BCR/pull/408
+[PR #414 @PatrykMis]: https://github.com/chenxiaolong/BCR/pull/414
+[PR #418 @rze0]: https://github.com/chenxiaolong/BCR/pull/418
+[PR #419 @rze0]: https://github.com/chenxiaolong/BCR/pull/419
+[PR #420 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/420
+[PR #424 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/424
+[PR #430 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/430
+[PR #434 @symbuzzer]: https://github.com/chenxiaolong/BCR/pull/434
+[PR #444 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/444
+[PR #450 @rze0]: https://github.com/chenxiaolong/BCR/pull/450
+[PR #453 @NSO73]: https://github.com/chenxiaolong/BCR/pull/453
+[PR #454 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/454
+[PR #456 @pvagner]: https://github.com/chenxiaolong/BCR/pull/456
+[PR #457 @PatrykMis]: https://github.com/chenxiaolong/BCR/pull/457
+[PR #458 @groozchique]: https://github.com/chenxiaolong/BCR/pull/458
+[PR #459 @y0geshx]: https://github.com/chenxiaolong/BCR/pull/459
+[PR #460 @htht2001]: https://github.com/chenxiaolong/BCR/pull/460
+[PR #469 @Pr0pHesyer]: https://github.com/chenxiaolong/BCR/pull/469
+[PR #474 @MicroDJS]: https://github.com/chenxiaolong/BCR/pull/474
+[PR #476 @phyrz91]: https://github.com/chenxiaolong/BCR/pull/476
+[PR #480 @DHD2280]: https://github.com/chenxiaolong/BCR/pull/480
+[PR #481 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/481
+[PR #493 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/493
+[PR #496 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/496
+[PR #497 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/497
+[PR #498 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/498
+[PR #503 @symbuzzer]: https://github.com/chenxiaolong/BCR/pull/503
+[PR #505 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/505
+[PR #506 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/506
+[PR #508 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/508
+[PR #516 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/516
+[PR #517 @symbuzzer]: https://github.com/chenxiaolong/BCR/pull/517
+[PR #518 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/518
+[PR #519 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/519
+[PR #521 @symbuzzer]: https://github.com/chenxiaolong/BCR/pull/521
+[PR #522 @nicorac]: https://github.com/chenxiaolong/BCR/pull/522
+[PR #523 @anenasa]: https://github.com/chenxiaolong/BCR/pull/523
+[PR #528 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/528
+[PR #529 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/529
+[PR #540 @phyrz91]: https://github.com/chenxiaolong/BCR/pull/540
+[PR #541 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/541
+[PR #543 @hdzungx]: https://github.com/chenxiaolong/BCR/pull/543
+[PR #548 @NSO73]: https://github.com/chenxiaolong/BCR/pull/548
+[PR #549 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/549
+[PR #550 @TheDeathDragon]: https://github.com/chenxiaolong/BCR/pull/550
+[PR #552 @musenq]: https://github.com/chenxiaolong/BCR/pull/552
+[PR #555 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/555
+[PR #556 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/556
+[PR #558 @harinworks]: https://github.com/chenxiaolong/BCR/pull/558
+[PR #560 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/560
+[PR #561 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/561
+[PR #564 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/564
+[PR #565 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/565
+[PR #567 @NSO73]: https://github.com/chenxiaolong/BCR/pull/567
+[PR #570 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/570
+[PR #571 @bugreportion]: https://github.com/chenxiaolong/BCR/pull/571
+[PR #572 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/572
+[PR #573 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/573
+[PR #577 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/577
+[PR #578 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/578
+[PR #583 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/583
+[PR #590 @NSO73]: https://github.com/chenxiaolong/BCR/pull/590
+[PR #597 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/597
+[PR #600 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/600
+[PR #603 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/603
+[PR #605 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/605
+[PR #606 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/606
+[PR #610 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/610
+[PR #611 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/611
+[PR #612 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/612
+[PR #613 @gilav23]: https://github.com/chenxiaolong/BCR/pull/613
+[PR #615 @NSO73]: https://github.com/chenxiaolong/BCR/pull/615
+[PR #622 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/622
+[PR #623 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/623
+[PR #624 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/624
+[PR #625 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/625
+[PR #626 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/626
+[PR #627 @NSO73]: https://github.com/chenxiaolong/BCR/pull/627
+[PR #629 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/629
+[PR #630 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/630
+[PR #631 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/631
+[PR #632 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/632
+[PR #635 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/635
+[PR #637 @Strange-IPmart]: https://github.com/chenxiaolong/BCR/pull/637
+[PR #644 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/644
+[PR #645 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/645
+[PR #646 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/646
+[PR #647 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/647
+[PR #648 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/648
+[PR #651 @NSO73]: https://github.com/chenxiaolong/BCR/pull/651
+[PR #652 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/652
+[PR #653 @nicorac]: https://github.com/chenxiaolong/BCR/pull/653
+[PR #655 @tzagim]: https://github.com/chenxiaolong/BCR/pull/655

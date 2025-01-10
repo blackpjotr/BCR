@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2024 Andrew Gunnerson
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
 package com.chiller3.bcr.settings
 
 import android.content.ActivityNotFoundException
@@ -6,34 +11,48 @@ import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.preference.Preference
-import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.PreferenceCategory
 import androidx.preference.SwitchPreferenceCompat
 import com.chiller3.bcr.BuildConfig
+import com.chiller3.bcr.DirectBootMigrationService
+import com.chiller3.bcr.Logcat
 import com.chiller3.bcr.Permissions
+import com.chiller3.bcr.PreferenceBaseFragment
 import com.chiller3.bcr.Preferences
 import com.chiller3.bcr.R
+import com.chiller3.bcr.dialog.MinDurationDialogFragment
 import com.chiller3.bcr.extension.formattedString
 import com.chiller3.bcr.format.Format
 import com.chiller3.bcr.format.NoParamInfo
 import com.chiller3.bcr.format.RangedParamInfo
-import com.chiller3.bcr.format.SampleRate
 import com.chiller3.bcr.output.Retention
 import com.chiller3.bcr.rule.RecordRulesActivity
 import com.chiller3.bcr.view.LongClickablePreference
 import com.chiller3.bcr.view.OnPreferenceLongClickListener
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.launch
 
-class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChangeListener,
+class SettingsFragment : PreferenceBaseFragment(), Preference.OnPreferenceChangeListener,
     Preference.OnPreferenceClickListener, OnPreferenceLongClickListener,
     SharedPreferences.OnSharedPreferenceChangeListener {
+    private val viewModel: SettingsViewModel by viewModels()
+
     private lateinit var prefs: Preferences
+    private lateinit var categoryDebug: PreferenceCategory
     private lateinit var prefCallRecording: SwitchPreferenceCompat
     private lateinit var prefRecordRules: Preference
     private lateinit var prefOutputDir: LongClickablePreference
     private lateinit var prefOutputFormat: Preference
+    private lateinit var prefMinDuration: Preference
     private lateinit var prefInhibitBatteryOpt: SwitchPreferenceCompat
     private lateinit var prefVersion: LongClickablePreference
+    private lateinit var prefMigrateDirectBoot: Preference
+    private lateinit var prefSaveLogs: Preference
 
     private val requestPermissionRequired =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
@@ -48,13 +67,22 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             refreshInhibitBatteryOptState()
         }
+    private val requestSafSaveLogs =
+        registerForActivityResult(ActivityResultContracts.CreateDocument(Logcat.MIMETYPE)) { uri ->
+            uri?.let {
+                viewModel.saveLogs(it)
+            }
+        }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        setPreferencesFromResource(R.xml.root_preferences, rootKey)
-
         val context = requireContext()
 
+        preferenceManager.setStorageDeviceProtected()
+        setPreferencesFromResource(R.xml.root_preferences, rootKey)
+
         prefs = Preferences(context)
+
+        categoryDebug = findPreference(Preferences.CATEGORY_DEBUG)!!
 
         // If the desired state is enabled, set to disabled if runtime permissions have been
         // denied. The user will have to grant permissions again to re-enable the features.
@@ -77,6 +105,10 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
         prefOutputFormat.onPreferenceClickListener = this
         refreshOutputFormat()
 
+        prefMinDuration = findPreference(Preferences.PREF_MIN_DURATION)!!
+        prefMinDuration.onPreferenceClickListener = this
+        refreshMinDuration()
+
         prefInhibitBatteryOpt = findPreference(Preferences.PREF_INHIBIT_BATT_OPT)!!
         prefInhibitBatteryOpt.onPreferenceChangeListener = this
 
@@ -84,6 +116,24 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
         prefVersion.onPreferenceClickListener = this
         prefVersion.onPreferenceLongClickListener = this
         refreshVersion()
+
+        prefMigrateDirectBoot = findPreference(Preferences.PREF_MIGRATE_DIRECT_BOOT)!!
+        prefMigrateDirectBoot.onPreferenceClickListener = this
+
+        prefSaveLogs = findPreference(Preferences.PREF_SAVE_LOGS)!!
+        prefSaveLogs.onPreferenceClickListener = this
+
+        refreshDebugPrefs()
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.alerts.collect {
+                    it.firstOrNull()?.let { alert ->
+                        onAlert(alert)
+                    }
+                }
+            }
+        }
     }
 
     override fun onStart() {
@@ -111,16 +161,28 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
     }
 
     private fun refreshOutputFormat() {
-        val (format, formatParamSaved) = Format.fromPreferences(prefs)
+        val (format, formatParamSaved, sampleRateSaved) = Format.fromPreferences(prefs)
         val formatParam = formatParamSaved ?: format.paramInfo.default
+        val sampleRate = sampleRateSaved ?: format.sampleRateInfo.default
+
         val summary = getString(R.string.pref_output_format_desc)
         val prefix = when (val info = format.paramInfo) {
             is RangedParamInfo -> "${info.format(requireContext(), formatParam)}, "
             NoParamInfo -> ""
         }
-        val sampleRate = SampleRate.fromPreferences(prefs)
+        val sampleRateText = format.sampleRateInfo.format(requireContext(), sampleRate)
 
-        prefOutputFormat.summary = "${summary}\n\n${format.name} (${prefix}${sampleRate})"
+        prefOutputFormat.summary = "${summary}\n\n${format.name} (${prefix}${sampleRateText})"
+    }
+
+    private fun refreshMinDuration() {
+        val minDuration = prefs.minDuration
+
+        prefMinDuration.summary = if (minDuration == 0) {
+            getString(R.string.pref_min_duration_desc_zero)
+        } else {
+            resources.getQuantityString(R.plurals.pref_min_duration_desc, minDuration, minDuration)
+        }
     }
 
     private fun refreshVersion() {
@@ -132,31 +194,33 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
         prefVersion.summary = "${BuildConfig.VERSION_NAME} (${BuildConfig.BUILD_TYPE}${suffix})"
     }
 
+    private fun refreshDebugPrefs() {
+        categoryDebug.isVisible = prefs.isDebugMode
+    }
+
     private fun refreshInhibitBatteryOptState() {
         val inhibiting = Permissions.isInhibitingBatteryOpt(requireContext())
         prefInhibitBatteryOpt.isChecked = inhibiting
-        prefInhibitBatteryOpt.isEnabled = !inhibiting
     }
 
     override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
-        // No need to validate runtime permissions when disabling a feature
-        if (newValue == false) {
-            return true
-        }
-
         val context = requireContext()
 
         when (preference) {
-            prefCallRecording -> if (Permissions.haveRequired(context)) {
+            prefCallRecording -> if (newValue == false || Permissions.haveRequired(context)) {
                 return true
             } else {
                 // Ask for optional permissions the first time only
                 requestPermissionRequired.launch(Permissions.REQUIRED + Permissions.OPTIONAL)
             }
-            // This is only reachable if battery optimization is not already inhibited
-            prefInhibitBatteryOpt -> requestInhibitBatteryOpt.launch(
-                Permissions.getInhibitBatteryOptIntent(requireContext())
-            )
+            prefInhibitBatteryOpt -> {
+                if (newValue == true) {
+                    requestInhibitBatteryOpt.launch(
+                        Permissions.getInhibitBatteryOptIntent(requireContext()))
+                } else {
+                    startActivity(Permissions.getBatteryOptSettingsIntent())
+                }
+            }
         }
 
         return false
@@ -180,9 +244,23 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
                 )
                 return true
             }
+            prefMinDuration -> {
+                MinDurationDialogFragment().show(
+                    parentFragmentManager.beginTransaction(), MinDurationDialogFragment.TAG)
+                return true
+            }
             prefVersion -> {
                 val uri = Uri.parse(BuildConfig.PROJECT_URL_AT_COMMIT)
                 startActivity(Intent(Intent.ACTION_VIEW, uri))
+                return true
+            }
+            prefMigrateDirectBoot -> {
+                val context = requireContext()
+                context.startService(Intent(context, DirectBootMigrationService::class.java))
+                return true
+            }
+            prefSaveLogs -> {
+                requestSafSaveLogs.launch(Logcat.FILENAME_DEFAULT)
                 return true
             }
         }
@@ -207,6 +285,7 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
             prefVersion -> {
                 prefs.isDebugMode = !prefs.isDebugMode
                 refreshVersion()
+                refreshDebugPrefs()
                 return true
             }
         }
@@ -218,7 +297,7 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
         when {
             key == null -> return
             // Update the switch state if it was toggled outside of the preference (eg. from the
-            // quick settings toggle)
+            // quick settings toggle).
             key == prefCallRecording.key -> {
                 val current = prefCallRecording.isChecked
                 val expected = sharedPreferences.getBoolean(key, current)
@@ -226,14 +305,35 @@ class SettingsFragment : PreferenceFragmentCompat(), Preference.OnPreferenceChan
                     prefCallRecording.isChecked = expected
                 }
             }
-            // Update the output directory state when it's changed by the bottom sheet
+            // Update the output directory state when it's changed by the bottom sheet.
             key == Preferences.PREF_OUTPUT_DIR || key == Preferences.PREF_OUTPUT_RETENTION -> {
                 refreshOutputDir()
             }
-            // Update the output format state when it's changed by the bottom sheet
-            Preferences.isFormatKey(key) || key == Preferences.PREF_SAMPLE_RATE -> {
+            // Update the output format state when it's changed by the bottom sheet.
+            Preferences.isFormatKey(key) -> {
                 refreshOutputFormat()
             }
+            // Update when it's changed by the dialog.
+            key == Preferences.PREF_MIN_DURATION -> {
+                refreshMinDuration()
+            }
         }
+    }
+
+    private fun onAlert(alert: SettingsAlert) {
+        val msg = when (alert) {
+            is SettingsAlert.LogcatSucceeded ->
+                getString(R.string.alert_logcat_success, alert.uri.formattedString)
+            is SettingsAlert.LogcatFailed ->
+                getString(R.string.alert_logcat_failure, alert.uri.formattedString, alert.error)
+        }
+
+        Snackbar.make(requireView(), msg, Snackbar.LENGTH_LONG)
+            .addCallback(object : Snackbar.Callback() {
+                override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
+                    viewModel.acknowledgeFirstAlert()
+                }
+            })
+            .show()
     }
 }

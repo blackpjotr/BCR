@@ -24,17 +24,8 @@
     <!-- About "preference" -->
     <string name="pref_version_name">Версія</string>
 
-    <!-- Record rules bottom sheet -->
-    <string name="pref_add_rule_name">Додати правило</string>
-    <string name="pref_add_rule_desc">Додайте правило автоматичного запису для контакту.</string>
-    <string name="pref_rule_desc_on">Зберегти запис</string>
-    <string name="pref_rule_desc_off">Видалити запис після завершення розмови.</string>
-    <string name="record_rules_rule_added">Додано нове правило. Натисніть і утримуйте правило, щоб видалити його.</string>
-    <string name="record_rules_rule_exists">Правило вже існує.</string>
-    <string name="record_rules_help">BCR внутрішньо завжди записує кожен дзвінок, але коли автоматичний запис вимкнено, запис буде видалено в кінці дзвінка. Під час розмови запис, запланований на видалення, можна зберегти за допомогою сповіщення BCR.</string>
-    <string name="record_rule_type_all_calls">Усі інші дзвінки</string>
-    <string name="record_rule_type_unknown_calls">Невідомі дзвінки</string>
-    <string name="record_rule_type_contact">Контакт: %s</string>
+    <!-- Record rules activity -->
+    <string name="record_rule_number_contact_summary">Контакт: %s</string>
 
     <!-- Output directory bottom sheet -->
     <string name="output_dir_bottom_sheet_change_dir">Змінити каталог</string>
@@ -45,7 +36,6 @@
     <string name="retention_keep_all">Зберегти назавжди</string>
     <plurals name="retention_days">
         <item quantity="one">Зберегти %d день</item>
-        <item quantity="two">Зберегти %d дні</item>
         <item quantity="few">Зберегти %d дні</item>
         <item quantity="many">Зберегти %d дні</item>
         <item quantity="other">Зберегти %d днів</item>
@@ -82,12 +72,8 @@
     <string name="format_param_dialog_message">Введіть значення в діапазоні [%1$s, %2$s].</string>
 
     <!-- Format parameter -->
-    <string name="format_param_bitrate">%s кбіт/с</string>
+    <string name="format_param_bitrate_kbps">%s кбіт/с</string>
     <string name="format_param_compression_level">Рівень %s</string>
-
-    <!-- Dialogs -->
-    <string name="dialog_action_ok">Гаразд</string>
-    <string name="dialog_action_cancel">Скасувати</string>
 
     <!-- Notifications -->
     <string name="notification_channel_persistent_name">Фонові служби</string>
@@ -109,9 +95,6 @@
     <string name="notification_action_restore">Відновити</string>
     <string name="notification_action_pause">Призупинити</string>
     <string name="notification_action_resume">Відновити</string>
-
-    <!-- Menus -->
-    <string name="menu_action_help">Допомога</string>
 
     <!-- Quick settings tile -->
     <string name="quick_settings_label">Запис дзвінків</string>

@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2023 Andrew Gunnerson
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
 package com.chiller3.bcr.dialog
 
 import android.app.Dialog
@@ -71,11 +76,11 @@ class FileRetentionDialogFragment : DialogFragment() {
         return MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.file_retention_dialog_title)
             .setView(binding.root)
-            .setPositiveButton(R.string.dialog_action_ok) { _, _ ->
+            .setPositiveButton(android.R.string.ok) { _, _ ->
                 prefs.outputRetention = retention!!
                 success = true
             }
-            .setNegativeButton(R.string.dialog_action_cancel, null)
+            .setNegativeButton(android.R.string.cancel, null)
             .create()
             .apply {
                 setCanceledOnTouchOutside(false)

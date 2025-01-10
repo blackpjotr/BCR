@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2023-2024 Andrew Gunnerson
+# SPDX-License-Identifier: GPL-3.0-only
+
 # On some devices, the system time is set too late in the boot process. This,
 # for some reason, causes the package manager service to not update the cache
 # entry for BCR despite the mtime of the apk being newer than the mtime of the
@@ -7,12 +10,11 @@
 #
 # [1] https://cs.android.com/android/platform/superproject/+/android-13.0.0_r42:frameworks/base/services/core/java/com/android/server/pm/parsing/PackageCacher.java;l=139
 
-source "${0%/*}/boot_common.sh" /data/local/tmp/bcr_clear_package_manager_caches.log
+source "${0%/*}/boot_common.sh" /data/local/tmp/bcr_post-fs-data.log
 
 header Timestamps
-ls -lZ "${cli_apk}"
-ls -lZ "${cli_apk#"${mod_dir}"}"
-find /data/system/package_cache -name "${app_id}-*" -exec ls -lZ {} \+
+ls -ldZ "${cli_apk%/*}"
+find /data/system/package_cache -name "${app_id}-*" -exec ls -ldZ {} \+
 
 header Clear package manager caches
 run_cli_apk com.chiller3.bcr.standalone.ClearPackageManagerCachesKt

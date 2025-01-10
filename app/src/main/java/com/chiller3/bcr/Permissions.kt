@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2023 Andrew Gunnerson
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
 package com.chiller3.bcr
 
 import android.Manifest
@@ -57,5 +62,12 @@ object Permissions {
     fun getInhibitBatteryOptIntent(context: Context) = Intent(
         Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
         Uri.fromParts("package", context.packageName, null),
+    )
+
+    /**
+     * Get intent for opening the battery optimization settings so the user can re-enable it.
+     */
+    fun getBatteryOptSettingsIntent() = Intent(
+        Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS,
     )
 }

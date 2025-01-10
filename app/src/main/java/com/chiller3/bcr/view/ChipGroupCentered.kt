@@ -1,10 +1,14 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2024 Andrew Gunnerson
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
 package com.chiller3.bcr.view
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.AttributeSet
 import android.view.View
-import androidx.core.view.ViewCompat
 import com.google.android.material.chip.ChipGroup
 import java.lang.Integer.max
 import java.lang.Integer.min
@@ -98,7 +102,7 @@ class ChipGroupCentered : ChipGroup {
      */
     @SuppressLint("RestrictedApi")
     private fun layoutRow(childIndices: IntRange, offsetLeft: Int, offsetTop: Int, rowIndex: Int) {
-        val range = if (layoutDirection == ViewCompat.LAYOUT_DIRECTION_RTL) {
+        val range = if (layoutDirection == LAYOUT_DIRECTION_RTL) {
             childIndices.reversed()
         } else {
             childIndices

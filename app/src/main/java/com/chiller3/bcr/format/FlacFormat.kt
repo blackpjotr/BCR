@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2024 Andrew Gunnerson
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
 @file:OptIn(ExperimentalUnsignedTypes::class)
 
 package com.chiller3.bcr.format
@@ -5,8 +10,11 @@ package com.chiller3.bcr.format
 import android.media.MediaFormat
 import java.io.FileDescriptor
 
-object FlacFormat : Format() {
+class FlacFormat : Format() {
     override val name: String = "FLAC"
+    override val mimeTypeContainer: String = MediaFormat.MIMETYPE_AUDIO_FLAC
+    override val mimeTypeAudio: String = MediaFormat.MIMETYPE_AUDIO_FLAC
+    override val passthrough: Boolean = false
     override val paramInfo: FormatParamInfo = RangedParamInfo(
         RangedParamType.CompressionLevel,
         0u..8u,
@@ -14,10 +22,8 @@ object FlacFormat : Format() {
         8u,
         uintArrayOf(0u, 5u, 8u),
     )
-    override val mimeTypeContainer: String = MediaFormat.MIMETYPE_AUDIO_FLAC
-    override val mimeTypeAudio: String = MediaFormat.MIMETYPE_AUDIO_FLAC
-    override val passthrough: Boolean = false
-    override val supported: Boolean = true
+    override val sampleRateInfo: SampleRateInfo =
+        SampleRateInfo.fromCodec(baseMediaFormat, 16_000u)
 
     override fun updateMediaFormat(mediaFormat: MediaFormat, param: UInt) {
         mediaFormat.apply {

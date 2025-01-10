@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2024 Andrew Gunnerson
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
 package com.chiller3.bcr
 
 import android.app.NotificationManager
@@ -9,7 +14,6 @@ import android.os.Looper
 import android.telecom.Call
 import android.telecom.InCallService
 import android.util.Log
-import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import com.chiller3.bcr.output.OutputFile
 import kotlin.random.Random
@@ -17,6 +21,8 @@ import kotlin.random.Random
 class RecorderInCallService : InCallService(), RecorderThread.OnRecordingCompletedListener {
     companion object {
         private val TAG = RecorderInCallService::class.java.simpleName
+
+        private const val PHONE_PACKAGE = "com.android.phone"
 
         private val ACTION_PAUSE = "${RecorderInCallService::class.java.canonicalName}.pause"
         private val ACTION_RESUME = "${RecorderInCallService::class.java.canonicalName}.resume"
@@ -48,7 +54,6 @@ class RecorderInCallService : InCallService(), RecorderThread.OnRecordingComplet
     private data class NotificationState(
         @StringRes val titleResId: Int,
         val message: String?,
-        @DrawableRes val iconResId: Int,
         // We don't store the intents because Intent does not override equals()
         val actionsResIds: List<Int>,
     )
@@ -142,7 +147,11 @@ class RecorderInCallService : InCallService(), RecorderThread.OnRecordingComplet
                 }
                 ACTION_RESTORE, ACTION_DELETE -> {
                     notificationIdsToRecorders[notificationId]?.keepRecording =
-                        action == ACTION_RESTORE
+                        if (action == ACTION_RESTORE) {
+                            RecorderThread.KeepState.KEEP
+                        } else {
+                            RecorderThread.KeepState.DISCARD
+                        }
                 }
                 else -> throw IllegalArgumentException("Invalid action: $action")
             }
@@ -210,7 +219,7 @@ class RecorderInCallService : InCallService(), RecorderThread.OnRecordingComplet
 
         if (call.parent != null) {
             Log.v(TAG, "Ignoring state change of conference call child")
-        } else if (callState == Call.STATE_ACTIVE) {
+        } else if (callState == Call.STATE_ACTIVE || (prefs.recordDialingState && callState == Call.STATE_DIALING)) {
             startRecording(call)
         } else if (callState == Call.STATE_DISCONNECTING || callState == Call.STATE_DISCONNECTED) {
             // This is necessary because onCallRemoved() might not be called due to firmware bugs
@@ -234,10 +243,16 @@ class RecorderInCallService : InCallService(), RecorderThread.OnRecordingComplet
         } else if (!Permissions.haveRequired(this)) {
             Log.v(TAG, "Required permissions have not been granted")
         } else if (!callsToRecorders.containsKey(call)) {
+            val callPackage = call.details.accountHandle.componentName.packageName
+            if (callPackage != PHONE_PACKAGE && !prefs.recordTelecomApps) {
+                Log.w(TAG, "Ignoring call associated with package: $callPackage")
+                return
+            }
+
             val recorder = try {
                 RecorderThread(this, this, call)
             } catch (e: Exception) {
-                notifyFailure(e.message, null, emptyList())
+                notifications.notifyRecordingFailure(e.message, null, emptyList())
                 throw e
             }
             callsToRecorders[call] = recorder
@@ -363,14 +378,29 @@ class RecorderInCallService : InCallService(), RecorderThread.OnRecordingComplet
 
                 if (canShowDelete) {
                     recorder.keepRecording?.let {
-                        if (it) {
-                            actionResIds.add(R.string.notification_action_delete)
-                            actionIntents.add(createActionIntent(notificationId, ACTION_DELETE))
-                        } else {
-                            message.append("\n\n")
-                            message.append(getString(R.string.notification_message_delete_at_end))
-                            actionResIds.add(R.string.notification_action_restore)
-                            actionIntents.add(createActionIntent(notificationId, ACTION_RESTORE))
+                        when (it) {
+                            RecorderThread.KeepState.KEEP -> {
+                                actionResIds.add(R.string.notification_action_delete)
+                                actionIntents.add(createActionIntent(notificationId, ACTION_DELETE))
+                            }
+                            RecorderThread.KeepState.DISCARD -> {
+                                message.append("\n\n")
+                                message.append(getString(R.string.notification_message_delete_at_end))
+                                actionResIds.add(R.string.notification_action_restore)
+                                actionIntents.add(createActionIntent(notificationId, ACTION_RESTORE))
+                            }
+                            RecorderThread.KeepState.DISCARD_TOO_SHORT -> {
+                                val minDuration = prefs.minDuration
+
+                                message.append("\n\n")
+                                message.append(resources.getQuantityString(
+                                    R.plurals.notification_message_delete_at_end_too_short,
+                                    minDuration,
+                                    minDuration,
+                                ))
+                                actionResIds.add(R.string.notification_action_restore)
+                                actionIntents.add(createActionIntent(notificationId, ACTION_RESTORE))
+                            }
                         }
                     }
                 }
@@ -378,7 +408,6 @@ class RecorderInCallService : InCallService(), RecorderThread.OnRecordingComplet
                 val state = NotificationState(
                     titleResId,
                     message.toString(),
-                    R.drawable.ic_launcher_quick_settings,
                     actionResIds,
                 )
                 if (state == allNotificationIds[notificationId]) {
@@ -389,7 +418,6 @@ class RecorderInCallService : InCallService(), RecorderThread.OnRecordingComplet
                 val notification = notifications.createPersistentNotification(
                     state.titleResId,
                     state.message,
-                    state.iconResId,
                     state.actionsResIds.zip(actionIntents),
                 )
 
@@ -404,29 +432,6 @@ class RecorderInCallService : InCallService(), RecorderThread.OnRecordingComplet
 
             notifications.vibrateIfEnabled(Notifications.CHANNEL_ID_PERSISTENT)
         }
-    }
-
-    private fun notifySuccess(file: OutputFile, additionalFiles: List<OutputFile>) {
-        notifications.notifySuccess(
-            R.string.notification_recording_succeeded,
-            R.drawable.ic_launcher_quick_settings,
-            file,
-            additionalFiles,
-        )
-    }
-
-    private fun notifyFailure(
-        errorMsg: String?,
-        file: OutputFile?,
-        additionalFiles: List<OutputFile>,
-    ) {
-        notifications.notifyFailure(
-            R.string.notification_recording_failed,
-            R.drawable.ic_launcher_quick_settings,
-            errorMsg,
-            file,
-            additionalFiles,
-        )
     }
 
     private fun onRecorderExited(recorder: RecorderThread) {
@@ -456,30 +461,48 @@ class RecorderInCallService : InCallService(), RecorderThread.OnRecordingComplet
         thread: RecorderThread,
         file: OutputFile?,
         additionalFiles: List<OutputFile>,
+        status: RecorderThread.Status,
     ) {
-        Log.i(TAG, "Recording completed: ${thread.id}: ${file?.redacted}")
+        Log.i(TAG, "Recording completed: ${thread.id}: ${file?.redacted}: $status")
         handler.post {
             onRecorderExited(thread)
 
-            // If the recording was initially paused and the user never resumed it, there's no
-            // output file, so nothing needs to be shown.
-            if (file != null) {
-                notifySuccess(file, additionalFiles)
+            when (status) {
+                RecorderThread.Status.Succeeded -> {
+                    notifications.notifyRecordingSuccess(file!!, additionalFiles)
+                }
+                is RecorderThread.Status.Failed -> {
+                    val message = buildString {
+                        when (status.component) {
+                            is RecorderThread.FailureComponent.AndroidMedia -> {
+                                val frame = status.component.stackFrame
+
+                                append(getString(R.string.notification_internal_android_error,
+                                    "${frame.className}.${frame.methodName}"))
+                            }
+                            RecorderThread.FailureComponent.Other -> {}
+                        }
+
+                        status.exception?.localizedMessage?.let {
+                            if (isNotEmpty()) {
+                                append("\n\n")
+                            }
+                            append(it)
+                        }
+                    }
+
+                    notifications.notifyRecordingFailure(message, file, additionalFiles)
+                }
+                is RecorderThread.Status.Discarded -> {
+                    when (status.reason) {
+                        RecorderThread.DiscardReason.Intentional -> {}
+                        is RecorderThread.DiscardReason.Silence -> {
+                            notifications.notifyRecordingPureSilence(status.reason.callPackage)
+                        }
+                    }
+                }
+                RecorderThread.Status.Cancelled -> {}
             }
-        }
-    }
-
-    override fun onRecordingFailed(
-        thread: RecorderThread,
-        errorMsg: String?,
-        file: OutputFile?,
-        additionalFiles: List<OutputFile>,
-    ) {
-        Log.w(TAG, "Recording failed: ${thread.id}: ${file?.redacted}")
-        handler.post {
-            onRecorderExited(thread)
-
-            notifyFailure(errorMsg, file, additionalFiles)
         }
     }
 }

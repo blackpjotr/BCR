@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2023-2024 Andrew Gunnerson
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
 package com.chiller3.bcr.output
 
 import android.content.Context
@@ -6,7 +11,11 @@ import android.telephony.TelephonyManager
 import android.util.Log
 import java.util.Locale
 
-class PhoneNumber(private val number: String) {
+data class PhoneNumber(private val number: String) {
+    init {
+        require(number.isNotEmpty()) { "Number cannot be empty" }
+    }
+
     fun format(context: Context, format: Format) = when (format) {
         Format.DIGITS_ONLY -> number.filter { Character.digit(it, 10) != -1 }
         Format.COUNTRY_SPECIFIC -> {

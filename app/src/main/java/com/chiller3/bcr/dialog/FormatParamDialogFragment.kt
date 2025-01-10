@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2023-2024 Andrew Gunnerson
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
 package com.chiller3.bcr.dialog
 
 import android.app.Dialog
@@ -44,7 +49,13 @@ class FormatParamDialogFragment : DialogFragment() {
 
         val multiplier = when (paramInfo.type) {
             RangedParamType.CompressionLevel -> 1U
-            RangedParamType.Bitrate -> 1000U
+            RangedParamType.Bitrate -> {
+                if (paramInfo.range.first % 1_000U == 0U && paramInfo.range.last % 1_000U == 0U) {
+                    1000U
+                } else {
+                    1U
+                }
+            }
         }
 
         binding = DialogTextInputBinding.inflate(layoutInflater)
@@ -60,8 +71,11 @@ class FormatParamDialogFragment : DialogFragment() {
         val translated = when (paramInfo.type) {
             RangedParamType.CompressionLevel ->
                 getString(R.string.format_param_compression_level, "\u0000")
-            RangedParamType.Bitrate ->
-                getString(R.string.format_param_bitrate, "\u0000")
+            RangedParamType.Bitrate -> if (multiplier == 1_000U) {
+                getString(R.string.format_param_bitrate_kbps, "\u0000")
+            } else {
+                getString(R.string.format_param_bitrate_bps, "\u0000")
+            }
         }
         val placeholder = translated.indexOf('\u0000')
         val hasPrefix = placeholder > 0
@@ -99,11 +113,11 @@ class FormatParamDialogFragment : DialogFragment() {
         return MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.format_param_dialog_title)
             .setView(binding.root)
-            .setPositiveButton(R.string.dialog_action_ok) { _, _ ->
+            .setPositiveButton(android.R.string.ok) { _, _ ->
                 prefs.setFormatParam(format, value!!)
                 success = true
             }
-            .setNegativeButton(R.string.dialog_action_cancel, null)
+            .setNegativeButton(android.R.string.cancel, null)
             .create()
             .apply {
                 setCanceledOnTouchOutside(false)

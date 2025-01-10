@@ -1,35 +1,18 @@
+/*
+ * SPDX-FileCopyrightText: 2023-2024 Andrew Gunnerson
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
 package com.chiller3.bcr.rule
 
-import android.os.Bundle
-import android.view.MenuItem
-import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
+import com.chiller3.bcr.PreferenceBaseActivity
 import com.chiller3.bcr.R
 
-class RecordRulesActivity : AppCompatActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.settings_activity)
-        if (savedInstanceState == null) {
-            supportFragmentManager
-                .beginTransaction()
-                .replace(R.id.settings, RecordRulesFragment())
-                .commit()
-        }
+class RecordRulesActivity : PreferenceBaseActivity() {
+    override val titleResId: Int = R.string.pref_record_rules_name
 
-        setSupportActionBar(findViewById(R.id.toolbar))
-        supportActionBar!!.setDisplayHomeAsUpEnabled(true)
+    override val showUpButton: Boolean = true
 
-        setTitle(R.string.pref_record_rules_name)
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            android.R.id.home -> {
-                onBackPressedDispatcher.onBackPressed()
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
-
+    override fun createFragment(): Fragment = RecordRulesFragment()
 }

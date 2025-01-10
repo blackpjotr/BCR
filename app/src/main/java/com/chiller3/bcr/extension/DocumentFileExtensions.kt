@@ -1,13 +1,21 @@
+/*
+ * SPDX-FileCopyrightText: 2023-2024 Andrew Gunnerson
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
 package com.chiller3.bcr.extension
 
 import android.content.ContentResolver
 import android.content.Context
+import android.database.Cursor
 import android.net.Uri
 import android.provider.DocumentsContract
 import android.util.Log
+import android.webkit.MimeTypeMap
 import androidx.core.net.toFile
 import androidx.documentfile.provider.DocumentFile
 import java.io.File
+import java.io.IOException
 
 private const val TAG = "DocumentFileExtensions"
 
@@ -25,14 +33,19 @@ private val DocumentFile.context: Context?
 private val DocumentFile.isTree: Boolean
     get() = uri.scheme == ContentResolver.SCHEME_CONTENT && DocumentsContract.isTreeUri(uri)
 
-private fun DocumentFile.iterChildrenWithColumns(extraColumns: Array<String>) = iterator {
-    require(isTree) { "Not a tree URI" }
+private val DocumentFile.isLocal: Boolean
+    get() = uri.scheme == ContentResolver.SCHEME_FILE ||
+            (uri.scheme == ContentResolver.SCHEME_CONTENT && uri.authority == DOCUMENTSUI_AUTHORITY)
 
-    val file = this@iterChildrenWithColumns
+private fun <R> DocumentFile.withChildrenWithColumns(
+    columns: Array<String>,
+    block: (Cursor, Sequence<Pair<DocumentFile, Cursor>>) -> R,
+): R {
+    require(isTree) { "Not a tree URI" }
 
     // These reflection calls access private fields, but everything is part of the
     // androidx.documentfile:documentfile dependency and we control the version of that.
-    val constructor = file.javaClass.getDeclaredConstructor(
+    val constructor = javaClass.getDeclaredConstructor(
         DocumentFile::class.java,
         Context::class.java,
         Uri::class.java,
@@ -40,23 +53,29 @@ private fun DocumentFile.iterChildrenWithColumns(extraColumns: Array<String>) = 
         isAccessible = true
     }
 
-    context!!.contentResolver.query(
+    val cursor = context!!.contentResolver.query(
         DocumentsContract.buildChildDocumentsUriUsingTree(
             uri,
             DocumentsContract.getDocumentId(uri),
         ),
-        arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID) + extraColumns,
+        columns + arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID),
         null, null, null,
-    )?.use {
-        while (it.moveToNext()) {
+    ) ?: throw IOException("Query returned null cursor: $uri: $columns")
+
+    return cursor.use {
+        val indexDocumentId =
+            cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
+
+        block(cursor, cursor.asSequence().map {
+            val documentId = it.getString(indexDocumentId)
             val child: DocumentFile = constructor.newInstance(
-                file,
+                this,
                 context,
-                DocumentsContract.buildDocumentUriUsingTree(uri, it.getString(0)),
+                DocumentsContract.buildDocumentUriUsingTree(uri, documentId),
             )
 
-            yield(Pair(child, it))
-        }
+            Pair(child, it)
+        })
     }
 }
 
@@ -72,16 +91,17 @@ fun DocumentFile.listFilesWithNames(): List<Pair<DocumentFile, String>> {
         return listFiles().map { Pair(it, it.name!!) }
     }
 
-    try {
-        return iterChildrenWithColumns(arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME))
-            .asSequence()
-            .map { Pair(it.first, it.second.getString(1)) }
-            .toList()
+    return try {
+        withChildrenWithColumns(arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME)) { c, sequence ->
+            val indexDisplayName =
+                c.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+
+            sequence.map { it.first to it.second.getString(indexDisplayName) }.toList()
+        }
     } catch (e: Exception) {
         Log.w(TAG, "Failed to query tree URI", e)
+        emptyList()
     }
-
-    return listOf()
 }
 
 /**
@@ -121,16 +141,17 @@ fun DocumentFile.findFileFast(displayName: String): DocumentFile? {
         return findFile(displayName)
     }
 
-    try {
-        return iterChildrenWithColumns(arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME))
-            .asSequence()
-            .find { it.second.getString(1) == displayName }
-            ?.first
+    return try {
+        withChildrenWithColumns(arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME)) { c, sequence ->
+            val indexDisplayName =
+                c.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+
+            sequence.find { it.second.getString(indexDisplayName) == displayName }?.first
+        }
     } catch (e: Exception) {
         Log.w(TAG, "Failed to query tree URI", e)
+        null
     }
-
-    return null
 }
 
 /** Like [DocumentFile.findFileFast], but accepts nested paths. */
@@ -148,12 +169,46 @@ fun DocumentFile.findNestedFile(path: List<String>): DocumentFile? {
  */
 fun DocumentFile.findOrCreateDirectories(path: List<String>): DocumentFile? {
     var file = this
+
+    // The root may not necessarily exist if it's a regular filesystem path.
+    if (uri.scheme == ContentResolver.SCHEME_FILE) {
+        uri.toFile().mkdirs()
+    }
+
     for (segment in path) {
         file = file.findFileFast(segment)
             ?: file.createDirectory(segment)
             ?: return null
     }
+
     return file
+}
+
+/**
+ * Like [DocumentFile.createFile], but explicitly appends file extensions for certain MIME types
+ * that are not supported in older versions of Android. This special handling is only applied for
+ * local files.
+ */
+fun DocumentFile.createFileCompat(mimeType: String, displayName: String): DocumentFile? {
+    val finalDisplayName = if (isLocal) {
+        buildString {
+            append(displayName)
+
+            val mimeTypeMap = MimeTypeMap.getSingleton()
+
+            if (!mimeTypeMap.hasMimeType(mimeType)) {
+                val ext = mimeTypeMap.getExtensionFromMimeTypeCompat(mimeType)
+                if (ext != null) {
+                    append('.')
+                    append(ext)
+                }
+            }
+        }
+    } else {
+        displayName
+    }
+
+    return createFile(mimeType, finalDisplayName)
 }
 
 /**
@@ -168,7 +223,7 @@ fun DocumentFile.createNestedFile(mimeType: String, path: List<String>): Documen
     require(path.isNotEmpty()) { "Path cannot be empty" }
 
     return findOrCreateDirectories(path.dropLast(1))
-        ?.createFile(mimeType, path.last())
+        ?.createFileCompat(mimeType, path.last())
 }
 
 /** Like [DocumentFile.renameTo], but preserves the file extension. */
@@ -280,7 +335,9 @@ private fun DocumentFile.isEmpty(): Boolean {
     require(isDirectory) { "Not a directory" }
 
     return if (isTree) {
-        !iterChildrenWithColumns(emptyArray()).hasNext()
+        withChildrenWithColumns(emptyArray()) { _, sequence ->
+            sequence.none()
+        }
     } else {
         listFiles().isEmpty()
     }

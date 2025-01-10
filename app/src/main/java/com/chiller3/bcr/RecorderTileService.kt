@@ -1,11 +1,18 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2024 Andrew Gunnerson
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
 package com.chiller3.bcr
 
+import android.annotation.SuppressLint
+import android.app.PendingIntent
 import android.content.Intent
 import android.content.SharedPreferences
+import android.os.Build
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import android.util.Log
-import androidx.preference.PreferenceManager
 import com.chiller3.bcr.settings.SettingsActivity
 
 class RecorderTileService : TileService(), SharedPreferences.OnSharedPreferenceChangeListener {
@@ -19,25 +26,32 @@ class RecorderTileService : TileService(), SharedPreferences.OnSharedPreferenceC
 
     override fun onStartListening() {
         super.onStartListening()
-        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        prefs.registerOnSharedPreferenceChangeListener(this)
+        prefs.prefs.registerOnSharedPreferenceChangeListener(this)
 
         refreshTileState()
     }
 
     override fun onStopListening() {
         super.onStopListening()
-        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        prefs.unregisterOnSharedPreferenceChangeListener(this)
+        prefs.prefs.unregisterOnSharedPreferenceChangeListener(this)
     }
 
+    @SuppressLint("StartActivityAndCollapseDeprecated")
     override fun onClick() {
         super.onClick()
 
         if (!Permissions.haveRequired(this)) {
-            val intent = Intent(this, SettingsActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            startActivityAndCollapse(intent)
+            val intent = Intent(this, SettingsActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                startActivityAndCollapse(PendingIntent.getActivity(
+                    this, 0, intent, PendingIntent.FLAG_IMMUTABLE))
+            } else {
+                @Suppress("DEPRECATION")
+                startActivityAndCollapse(intent)
+            }
         } else {
             prefs.isCallRecordingEnabled = !prefs.isCallRecordingEnabled
         }

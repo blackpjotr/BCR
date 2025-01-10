@@ -1,22 +1,18 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2024 Andrew Gunnerson
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
 package com.chiller3.bcr.settings
 
-import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
+import com.chiller3.bcr.PreferenceBaseActivity
 import com.chiller3.bcr.R
 
-class SettingsActivity : AppCompatActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.settings_activity)
-        if (savedInstanceState == null) {
-            supportFragmentManager
-                    .beginTransaction()
-                    .replace(R.id.settings, SettingsFragment())
-                    .commit()
-        }
+class SettingsActivity : PreferenceBaseActivity() {
+    override val titleResId: Int = R.string.app_name_full
 
-        setSupportActionBar(findViewById(R.id.toolbar))
+    override val showUpButton: Boolean = false
 
-        setTitle(R.string.app_name_full)
-    }
+    override fun createFragment(): Fragment = SettingsFragment()
 }

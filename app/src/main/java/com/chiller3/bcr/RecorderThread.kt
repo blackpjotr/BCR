@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022-2024 Andrew Gunnerson
+ * SPDX-License-Identifier: GPL-3.0-only
+ */
+
 package com.chiller3.bcr
 
 import android.annotation.SuppressLint
@@ -5,7 +10,6 @@ import android.content.Context
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
-import android.net.Uri
 import android.os.ParcelFileDescriptor
 import android.system.Os
 import android.telecom.Call
@@ -16,26 +20,31 @@ import com.chiller3.bcr.extension.deleteIfEmptyDir
 import com.chiller3.bcr.extension.frameSizeInBytesCompat
 import com.chiller3.bcr.extension.listFilesWithPathsRecursively
 import com.chiller3.bcr.extension.phoneNumber
+import com.chiller3.bcr.extension.toDocumentFile
 import com.chiller3.bcr.format.Encoder
 import com.chiller3.bcr.format.Format
-import com.chiller3.bcr.format.NoParamInfo
-import com.chiller3.bcr.format.RangedParamInfo
-import com.chiller3.bcr.format.RangedParamType
-import com.chiller3.bcr.format.SampleRate
 import com.chiller3.bcr.output.CallMetadata
 import com.chiller3.bcr.output.CallMetadataCollector
+import com.chiller3.bcr.output.CallMetadataJson
 import com.chiller3.bcr.output.DaysRetention
+import com.chiller3.bcr.output.FormatJson
 import com.chiller3.bcr.output.NoRetention
 import com.chiller3.bcr.output.OutputDirUtils
 import com.chiller3.bcr.output.OutputFile
 import com.chiller3.bcr.output.OutputFilenameGenerator
+import com.chiller3.bcr.output.OutputJson
 import com.chiller3.bcr.output.OutputPath
+import com.chiller3.bcr.output.ParameterType
+import com.chiller3.bcr.output.PhoneNumber
+import com.chiller3.bcr.output.RecordingJson
 import com.chiller3.bcr.output.Retention
 import com.chiller3.bcr.rule.RecordRule
-import org.json.JSONObject
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.lang.Process
 import java.nio.ByteBuffer
-import java.time.*
+import java.time.Duration
+import java.util.concurrent.atomic.AtomicReference
 import android.os.Process as AndroidProcess
 
 /**
@@ -59,7 +68,6 @@ class RecorderThread(
 ) : Thread(RecorderThread::class.java.simpleName) {
     private val tag = "${RecorderThread::class.java.simpleName}/${id}"
     private val prefs = Preferences(context)
-    private val isDebug = prefs.isDebugMode
 
     enum class State {
         NOT_STARTED,
@@ -72,7 +80,12 @@ class RecorderThread(
     @Volatile var state = State.NOT_STARTED
         private set
     @Volatile private var isCancelled = false
-    private var captureFailed = false
+
+    enum class KeepState {
+        KEEP,
+        DISCARD,
+        DISCARD_TOO_SHORT,
+    }
 
     /**
      * Whether to preserve the recording.
@@ -81,15 +94,27 @@ class RecorderThread(
      * this field is set to the computed value. The value can be changed, including from other
      * threads, in case the user wants to override the rules during the middle of the call.
      */
-    @Volatile var keepRecording: Boolean? = null
+    private val _keepRecording = AtomicReference<KeepState>()
+    var keepRecording: KeepState?
+        get() = _keepRecording.get()
         set(value) {
             require(value != null)
 
-            field = value
+            _keepRecording.set(value)
             Log.d(tag, "Keep state updated: $value")
 
             listener.onRecordingStateChanged(this)
         }
+
+    private fun keepRecordingCompareAndSet(expected: KeepState?, value: KeepState?) {
+        require(value != null)
+
+        if (_keepRecording.compareAndSet(expected, value)) {
+            Log.d(tag, "Keep state updated: $value")
+
+            listener.onRecordingStateChanged(this)
+        }
+    }
 
     /**
      * Whether the user paused the recording.
@@ -125,10 +150,12 @@ class RecorderThread(
     val outputPath: OutputPath
         get() = outputFilenameGenerator.generate(callMetadataCollector.callMetadata)
 
+    private val minDuration: Int
+
     // Format
     private val format: Format
     private val formatParam: UInt?
-    private val sampleRate = SampleRate.fromPreferences(prefs)
+    private val sampleRate: UInt
 
     // Logging
     private lateinit var logcatPath: OutputPath
@@ -138,9 +165,12 @@ class RecorderThread(
     init {
         Log.i(tag, "Created thread for call: $parentCall")
 
+        minDuration = prefs.minDuration
+
         val savedFormat = Format.fromPreferences(prefs)
         format = savedFormat.first
         formatParam = savedFormat.second
+        sampleRate = savedFormat.third ?: format.sampleRateInfo.default
     }
 
     fun onCallDetailsChanged(call: Call, details: Call.Details) {
@@ -153,34 +183,60 @@ class RecorderThread(
             return
         }
 
-        val numbers = hashSetOf<String>()
+        val numbers = hashSetOf<PhoneNumber>()
 
         if (parentCall.details.hasProperty(Call.Details.PROPERTY_CONFERENCE)) {
             for (childCall in parentCall.children) {
-                childCall.details?.phoneNumber?.let { numbers.add(it.toString()) }
+                childCall.details?.phoneNumber?.let { numbers.add(it) }
             }
         } else {
-            parentCall.details?.phoneNumber?.let { numbers.add(it.toString()) }
+            parentCall.details?.phoneNumber?.let { numbers.add(it) }
         }
 
         Log.i(tag, "Evaluating record rules for ${numbers.size} phone number(s)")
 
         val rules = prefs.recordRules ?: Preferences.DEFAULT_RECORD_RULES
-        keepRecording = try {
-            RecordRule.evaluate(context, rules, numbers)
+        val metadata = callMetadataCollector.callMetadata
+
+        val action = try {
+            RecordRule.evaluate(context, rules, numbers, metadata.direction, metadata.simSlot)
         } catch (e: Exception) {
             Log.w(tag, "Failed to evaluate record rules", e)
             // Err on the side of caution
-            true
+            RecordRule.Action.SAVE
         }
+
+        Log.i(tag, "Record rule action: $action")
+
+        val keep = when (action) {
+            RecordRule.Action.SAVE -> true
+            RecordRule.Action.DISCARD -> false
+            RecordRule.Action.IGNORE -> {
+                Log.i(tag, "Cancelling due to record rules")
+                cancel()
+                return
+            }
+        }
+
+        keepRecordingCompareAndSet(
+            null,
+            if (keep) {
+                if (minDuration > 0) {
+                    KeepState.DISCARD_TOO_SHORT
+                } else {
+                    KeepState.KEEP
+                }
+            } else {
+                KeepState.DISCARD
+            },
+        )
 
         listener.onRecordingStateChanged(this)
     }
 
     override fun run() {
-        var success = false
-        var errorMsg: String? = null
-        var resultUri: Uri? = null
+        var status: Status = Status.Cancelled
+        var outputDocFile: DocumentFile? = null
         val additionalFiles = ArrayList<OutputFile>()
 
         startLogcat()
@@ -188,26 +244,27 @@ class RecorderThread(
         try {
             Log.i(tag, "Recording thread started")
 
+            evaluateRules()
+
             if (isCancelled) {
                 Log.i(tag, "Recording cancelled before it began")
             } else {
                 state = State.RECORDING
                 listener.onRecordingStateChanged(this)
 
-                evaluateRules()
-
                 val initialPath = outputPath
-                val outputFile = dirUtils.createFileInDefaultDir(
+                outputDocFile = dirUtils.createFileInDefaultDir(
                     initialPath.value, format.mimeTypeContainer)
-                resultUri = outputFile.uri
 
                 var recordingInfo: RecordingInfo? = null
 
                 try {
-                    dirUtils.openFile(outputFile, true).use {
+                    dirUtils.openFile(outputDocFile, true).use {
                         recordingInfo = recordUntilCancelled(it)
                         Os.fsync(it.fileDescriptor)
                     }
+
+                    status = Status.Succeeded
                 } finally {
                     state = State.FINALIZING
                     listener.onRecordingStateChanged(this)
@@ -215,13 +272,13 @@ class RecorderThread(
                     callMetadataCollector.update(true)
                     val finalPath = outputPath
 
-                    if (keepRecording != false) {
+                    if (keepRecording == KeepState.KEEP) {
                         dirUtils.tryMoveToOutputDir(
-                            outputFile,
+                            outputDocFile,
                             finalPath.value,
                             format.mimeTypeContainer,
                         )?.let {
-                            resultUri = it.uri
+                            outputDocFile = it
                         }
 
                         writeMetadataFile(finalPath.value, recordingInfo)?.let {
@@ -229,53 +286,68 @@ class RecorderThread(
                         }
                     } else {
                         Log.i(tag, "Deleting recording: $finalPath")
-                        outputFile.delete()
-                        resultUri = null
+                        outputDocFile.delete()
+                        outputDocFile = null
+
+                        status = Status.Discarded(DiscardReason.Intentional)
                     }
 
                     processRetention()
                 }
-
-                success = !captureFailed
             }
         } catch (e: Exception) {
             Log.e(tag, "Error during recording", e)
 
-            errorMsg = buildString {
-                val elem = e.stackTrace.find { it.className.startsWith("android.media.") }
-                if (elem != null) {
-                    append(context.getString(R.string.notification_internal_android_error,
-                        "${elem.className}.${elem.methodName}"))
-                    append("\n\n")
+            if (e is PureSilenceException) {
+                outputDocFile?.delete()
+                outputDocFile = null
+
+                additionalFiles.forEach {
+                    it.toDocumentFile(context).delete()
+                }
+                additionalFiles.clear()
+
+                val packageName = parentCall.details.accountHandle.componentName.packageName
+                status = Status.Discarded(DiscardReason.Silence(packageName))
+            } else {
+                val mediaFrame = e.stackTrace.find { it.className.startsWith("android.media.") }
+                val component = if (mediaFrame != null) {
+                    FailureComponent.AndroidMedia(mediaFrame)
+                } else {
+                    FailureComponent.Other
                 }
 
-                append(e.localizedMessage)
+                status = Status.Failed(component, e)
             }
         } finally {
             Log.i(tag, "Recording thread completed")
 
             try {
-                stopLogcat()?.let { additionalFiles.add(it) }
+                val logcatOutput = stopLogcat()
+
+                // Log files are always kept when an error occurs to avoid the hassle of having the
+                // user manually enable debug mode and needing to reproduce the problem.
+                if (prefs.isDebugMode || status is Status.Failed) {
+                    additionalFiles.add(logcatOutput)
+                } else {
+                    Log.d(tag, "No need to preserve logcat")
+                    logcatOutput.toDocumentFile(context).delete()
+                }
             } catch (e: Exception) {
                 Log.w(tag, "Failed to dump logcat", e)
             }
 
-            val outputFile = resultUri?.let {
+            val outputFile = outputDocFile?.let {
                 OutputFile(
-                    it,
-                    outputFilenameGenerator.redactor.redact(it),
+                    it.uri,
+                    outputFilenameGenerator.redactor.redact(it.uri),
                     format.mimeTypeContainer,
                 )
             }
 
             state = State.COMPLETED
             listener.onRecordingStateChanged(this)
-
-            if (success) {
-                listener.onRecordingCompleted(this, outputFile, additionalFiles)
-            } else {
-                listener.onRecordingFailed(this, errorMsg, outputFile, additionalFiles)
-            }
+            listener.onRecordingCompleted(this, outputFile, additionalFiles, status)
         }
     }
 
@@ -285,8 +357,7 @@ class RecorderThread(
      * output file.
      *
      * If called before [start], the thread will not record any audio not create an output file. In
-     * this scenario, [OnRecordingCompletedListener.onRecordingFailed] will be called with a null
-     * [Uri].
+     * this scenario, the status will be reported as [Status.Cancelled].
      */
     fun cancel() {
         Log.d(tag, "Requested cancellation")
@@ -304,10 +375,6 @@ class RecorderThread(
     }
 
     private fun startLogcat() {
-        if (!isDebug) {
-            return
-        }
-
         assert(!this::logcatProcess.isInitialized) { "logcat already started" }
 
         Log.d(tag, "Starting log file (${BuildConfig.VERSION_NAME})")
@@ -323,11 +390,7 @@ class RecorderThread(
             .start()
     }
 
-    private fun stopLogcat(): OutputFile? {
-        if (!isDebug) {
-            return null
-        }
-
+    private fun stopLogcat(): OutputFile {
         assert(this::logcatProcess.isInitialized) { "logcat not started" }
 
         var uri = logcatFile.uri
@@ -363,47 +426,46 @@ class RecorderThread(
         Log.i(tag, "Writing metadata file")
 
         try {
-            val formatJson = JSONObject().apply {
-                put("type", format.name)
-                put("mime_type_container", format.mimeTypeContainer)
-                put("mime_type_audio", format.mimeTypeAudio)
-                put("parameter_type", when (val info = format.paramInfo) {
-                    NoParamInfo -> "none"
-                    is RangedParamInfo -> when (info.type) {
-                        RangedParamType.CompressionLevel -> "compression_level"
-                        RangedParamType.Bitrate -> "bitrate"
-                    }
-                })
-                put("parameter", (formatParam ?: format.paramInfo.default).toInt())
+            val formatJson = FormatJson(
+                type = format.name,
+                mimeTypeContainer = format.mimeTypeContainer,
+                mimeTypeAudio = format.mimeTypeAudio,
+                parameterType = ParameterType.fromParamInfo(format.paramInfo),
+                parameter = formatParam ?: format.paramInfo.default,
+            )
+            val recordingJson = recordingInfo?.let {
+                RecordingJson(
+                    framesTotal = it.framesTotal,
+                    framesEncoded = it.framesEncoded,
+                    sampleRate = it.sampleRate,
+                    channelCount = it.channelCount,
+                    durationSecsTotal = it.durationSecsTotal,
+                    durationSecsEncoded = it.durationSecsEncoded,
+                    bufferFrames = it.bufferFrames,
+                    bufferOverruns = it.bufferOverruns,
+                    wasEverPaused = it.wasEverPaused,
+                    wasEverHolding = it.wasEverHolding,
+                )
             }
-            val recordingJson = if (recordingInfo != null) {
-                JSONObject().apply {
-                    put("frames_total", recordingInfo.framesTotal)
-                    put("frames_encoded", recordingInfo.framesEncoded)
-                    put("sample_rate", recordingInfo.sampleRate)
-                    put("channel_count", recordingInfo.channelCount)
-                    put("duration_secs_total", recordingInfo.durationSecsTotal)
-                    put("duration_secs_encoded", recordingInfo.durationSecsEncoded)
-                    put("buffer_frames", recordingInfo.bufferFrames)
-                    put("buffer_overruns", recordingInfo.bufferOverruns)
-                    put("was_ever_paused", recordingInfo.wasEverPaused)
-                    put("was_ever_holding", recordingInfo.wasEverHolding)
-                }
-            } else {
-                JSONObject.NULL
-            }
-            val outputJson = JSONObject().apply {
-                put("format", formatJson)
-                put("recording", recordingJson)
-            }
-            val metadataJson = callMetadataCollector.callMetadata.toJson(context).apply {
-                put("output", outputJson)
-            }
-            val metadataBytes = metadataJson.toString(4).toByteArray()
+            val outputJson = OutputJson(
+                format = formatJson,
+                recording = recordingJson,
+            )
+            val metadataJson = CallMetadataJson(
+                context,
+                callMetadataCollector.callMetadata,
+                outputJson,
+            )
+            val metadataBytes = JSON_FORMAT.encodeToString(metadataJson).toByteArray()
 
-            val metadataFile = dirUtils.createFileInOutputDir(path, MIME_METADATA)
+            // Always create in the default directory and then move to ensure that we don't race
+            // with the direct boot file migration process.
+            var metadataFile = dirUtils.createFileInDefaultDir(path, MIME_METADATA)
             dirUtils.openFile(metadataFile, true).use {
-                Os.write(it.fileDescriptor, metadataBytes, 0, metadataBytes.size)
+                writeFully(it.fileDescriptor, metadataBytes, 0, metadataBytes.size)
+            }
+            dirUtils.tryMoveToOutputDir(metadataFile, path, MIME_METADATA)?.let {
+                metadataFile = it
             }
 
             return OutputFile(
@@ -425,10 +487,7 @@ class RecorderThread(
      * files are ignored.
      */
     private fun processRetention() {
-        val directory = prefs.outputDir?.let {
-            // Only returns null on API <21
-            DocumentFile.fromTreeUri(context, it)!!
-        } ?: DocumentFile.fromFile(prefs.defaultOutputDir)
+        val directory = prefs.outputDirOrDefault.toDocumentFile(context)
 
         val retention = when (val r = Retention.fromPreferences(prefs)) {
             NoRetention -> {
@@ -483,8 +542,7 @@ class RecorderThread(
     private fun recordUntilCancelled(pfd: ParcelFileDescriptor): RecordingInfo {
         AndroidProcess.setThreadPriority(AndroidProcess.THREAD_PRIORITY_URGENT_AUDIO)
 
-        val minBufSize = AudioRecord.getMinBufferSize(
-            sampleRate.value.toInt(), CHANNEL_CONFIG, ENCODING)
+        val minBufSize = AudioRecord.getMinBufferSize(sampleRate.toInt(), CHANNEL_CONFIG, ENCODING)
         if (minBufSize < 0) {
             throw Exception("Failure when querying minimum buffer size: $minBufSize")
         }
@@ -492,7 +550,7 @@ class RecorderThread(
 
         val audioRecord = AudioRecord(
             MediaRecorder.AudioSource.VOICE_CALL,
-            sampleRate.value.toInt(),
+            sampleRate.toInt(),
             CHANNEL_CONFIG,
             ENCODING,
             // On some devices, MediaCodec occasionally has sudden spikes in processing time, so use
@@ -567,6 +625,8 @@ class RecorderThread(
         var bufferOverruns = 0
         var wasEverPaused = false
         var wasEverHolding = false
+        var wasReadSamplesError = false
+        var wasPureSilence = true
         val frameSize = audioRecord.format.frameSizeInBytesCompat
 
         // Use a slightly larger buffer to reduce the chance of problems under load
@@ -590,13 +650,22 @@ class RecorderThread(
             if (n < 0) {
                 Log.e(tag, "Error when reading samples from $audioRecord: $n")
                 isCancelled = true
-                captureFailed = true
+                wasReadSamplesError = true
             } else if (n == 0) {
                 // Wait for the wall clock equivalent of the minimum buffer size
                 sleep(bufferNs / 1_000_000L / factor)
                 continue
             } else {
                 buffer.limit(n)
+
+                if (wasPureSilence) {
+                    for (i in 0 until n / 2) {
+                        if (buffer.getShort(2 * i) != 0.toShort()) {
+                            wasPureSilence = false
+                            break
+                        }
+                    }
+                }
 
                 val encodeBegin = System.nanoTime()
 
@@ -629,6 +698,17 @@ class RecorderThread(
                         "record=${recordElapsed / 1_000_000.0}ms, " +
                         "encode=${encodeElapsed / 1_000_000.0}ms")
             }
+
+            val secondsEncoded = numFramesEncoded / audioRecord.sampleRate / audioRecord.channelCount
+            if (secondsEncoded >= minDuration) {
+                keepRecordingCompareAndSet(KeepState.DISCARD_TOO_SHORT, KeepState.KEEP)
+            }
+        }
+
+        if (wasReadSamplesError) {
+            throw ReadSamplesException()
+        } else if (wasPureSilence) {
+            throw PureSilenceException()
         }
 
         // Signal EOF with empty buffer
@@ -656,8 +736,12 @@ class RecorderThread(
         private const val CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO
         private const val ENCODING = AudioFormat.ENCODING_PCM_16BIT
 
-        private const val MIME_LOGCAT = "text/plain"
-        private const val MIME_METADATA = "application/json"
+        const val MIME_LOGCAT = "text/plain"
+        const val MIME_METADATA = "application/json"
+
+        private val JSON_FORMAT = Json {
+            prettyPrint = true
+        }
     }
 
     private data class RecordingInfo(
@@ -685,6 +769,34 @@ class RecorderThread(
         }
     }
 
+    private class ReadSamplesException(cause: Throwable? = null)
+        : Exception("Failed to read audio samples", cause)
+
+    private class PureSilenceException(cause: Throwable? = null)
+        : Exception("Audio contained pure silence", cause)
+
+    sealed interface FailureComponent {
+        data class AndroidMedia(val stackFrame: StackTraceElement) : FailureComponent
+
+        data object Other : FailureComponent
+    }
+
+    sealed interface DiscardReason {
+        data object Intentional : DiscardReason
+
+        data class Silence(val callPackage: String) : DiscardReason
+    }
+
+    sealed interface Status {
+        data object Succeeded : Status
+
+        data class Failed(val component: FailureComponent, val exception: Exception?) : Status
+
+        data class Discarded(val reason: DiscardReason) : Status
+
+        data object Cancelled : Status
+    }
+
     interface OnRecordingCompletedListener {
         /**
          * Called when the pause state, keep state, or output filename are changed.
@@ -692,32 +804,26 @@ class RecorderThread(
         fun onRecordingStateChanged(thread: RecorderThread)
 
         /**
-         * Called when the recording completes successfully. [file] is the output file. If [file] is
-         * null, then the recording was started in the paused state and the output file was deleted
-         * because the user never resumed it.
+         * Called when the recording completes, successfully or otherwise. [file] is the output
+         * file.
+         *
+         * [file] may be null in several scenarios:
+         * * The call matched a record rule that defaults to discarding the recording
+         * * The user intentionally chose to discard the recording via the notification
+         * * The output file could not be created
+         * * The thread was cancelled before it started
+         *
+         * Note that for most errors, the output file is *not* deleted.
          *
          * [additionalFiles] are additional files associated with the main output file and should be
-         * deleted along with the main file.
+         * deleted along with the main file if the user chooses to do so via the notification. These
+         * files may exist even if [file] is null (eg. the log file).
          */
         fun onRecordingCompleted(
             thread: RecorderThread,
             file: OutputFile?,
             additionalFiles: List<OutputFile>,
-        )
-
-        /**
-         * Called when an error occurs during recording. If [file] is not null, it points to the
-         * output file containing partially recorded audio. If [file] is null, then either the
-         * output file could not be created or the thread was cancelled before it was started.
-         *
-         * [additionalFiles] are additional files associated with the main output file and should be
-         * deleted along with the main file.
-         */
-        fun onRecordingFailed(
-            thread: RecorderThread,
-            errorMsg: String?,
-            file: OutputFile?,
-            additionalFiles: List<OutputFile>,
+            status: Status,
         )
     }
 }
