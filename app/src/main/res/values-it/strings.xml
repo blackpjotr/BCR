@@ -22,7 +22,7 @@
     <string name="pref_record_rules_desc">Configura quali chiamate dovrebbero essere registrate automaticamente.</string>
 
     <string name="pref_output_dir_name">Cartella di destinazione</string>
-    <string name="pref_output_dir_desc">Seleziona una cartella in cui salvare le regitrazioni. Tieni premuto per aprirla nel gestore file.</string>
+    <string name="pref_output_dir_desc">Seleziona una cartella in cui salvare le registrazioni. Tieni premuto per aprirla nel gestore file.</string>
 
     <string name="pref_output_format_name">Formato di output</string>
     <string name="pref_output_format_desc">Seleziona un formato di codifica per le registrazioni.</string>
