@@ -1,45 +1,58 @@
+<!--
+    SPDX-FileCopyrightText: 2022-2026 Andrew Gunnerson
+    SPDX-FileContributor: DHD2280 (translation)
+    SPDX-FileContributor: Claudio Nicora (translation)
+    SPDX-FileContributor: Andrea Strange (translation)
+    SPDX-FileContributor: Federico Carboni <federico@carbons.dev> (translation)
+    SPDX-License-Identifier: GPL-3.0-only
+-->
 <resources>
     <string name="app_name_full">Basic Call Recorder</string>
 
     <!-- Preference headers -->
-    <string name="pref_header_general">Generale</string>
+    <string name="pref_header_general">Generali</string>
     <string name="pref_header_about">Informazioni</string>
 
     <!-- General preferences -->
-    <string name="pref_call_recording_name">Registrazione chiamate</string>
+    <string name="pref_header_debug">Debug</string>
+    <string name="pref_call_recording_name">Registrazione delle chiamate</string>
     <string name="pref_call_recording_desc">Registra le chiamate in entrata e in uscita. Sono richiesti i permessi per accedere al microfono e le notifiche per registrare in background.</string>
 
-    <string name="pref_record_rules_name">Regole per registrazione automatica</string>
-    <string name="pref_record_rules_desc">Configura quali chiamate dovrebbero essere automaticamente registrate.</string>
+    <string name="pref_record_rules_name">Regole di registrazione automatica</string>
+    <string name="pref_record_rules_desc">Configura quali chiamate dovrebbero essere registrate automaticamente.</string>
 
-    <string name="pref_output_dir_name">Cartella</string>
-    <string name="pref_output_dir_desc">Scegli una cartella in cui conservare le regitrazioni. Tieni premuto per mostrare il file manager.</string>
+    <string name="pref_output_dir_name">Cartella di destinazione</string>
+    <string name="pref_output_dir_desc">Seleziona una cartella in cui salvare le regitrazioni. Tieni premuto per aprirla nel gestore file.</string>
 
-    <string name="pref_output_format_name">Formato output</string>
-    <string name="pref_output_format_desc">Seleziona un formato di encoding per le registrazioni.</string>
+    <string name="pref_output_format_name">Formato di output</string>
+    <string name="pref_output_format_desc">Seleziona un formato di codifica per le registrazioni.</string>
 
     <string name="pref_min_duration_name">Durata minima registrazione</string>
+
     <plurals name="pref_min_duration_desc">
         <item quantity="one">Conserva registrazioni lunghe almeno %d secondo.</item>
         <item quantity="other">Conserva registrazioni lunghe almeno %d secondi.</item>
+        <item quantity="many">Conserva registrazioni lunghe almeno %d secondi.</item>
     </plurals>
+
     <string name="pref_min_duration_desc_zero">Conserva registrazioni di qualsiasi lunghezza.</string>
 
     <string name="pref_write_metadata_name">Scrivi un file con i metadati</string>
     <string name="pref_write_metadata_desc">Crea un file JSON contenente i dettagli sulla chiamata insieme al file audio.</string>
 
     <string name="pref_record_telecom_apps_name">Registra le app integrate nelle telecomunicazioni</string>
-    <string name="pref_record_telecom_apps_desc">Registra le chiamate da app di terze parti che si integrano con il sistema di telecomunicazioni Android. Le registrazioni di queste chiamate conterranno probabilmente solo silenzio.</string>
+    <string name="pref_record_telecom_apps_desc">Registra le chiamate da app di terze parti che usano il framework Telecom di Android. Le registrazioni di queste chiamate conterranno probabilmente audio incompleto, mancante o altrimenti inutilizzabile.</string>
 
     <string name="pref_record_dialing_state_name">Registra le chiamate prima della connessione</string>
-    <string name="pref_record_dialing_state_desc">Per le chiamate in uscita, avvia la registrazione non appena inizia la composizione del numero, anziché attendere che la chiamata venga connessa.</string>
+    <string name="pref_record_dialing_state_desc">Per le chiamate in uscita, avvia la registrazione non appena inizia la composizione del numero, anziché attendere che la chiamata si connetta.</string>
 
     <!-- About "preference" -->
+    <string name="pref_show_launcher_icon_desc">Quando l\'icona dell\'app è nascosta componi <b>*#*#BCR#*#*</b> per aprire l\'app.</string>
     <string name="pref_version_name">Versione</string>
 
     <!-- Debug preferences -->
     <string name="pref_force_direct_boot_name">Forza la modalità di avvio diretto</string>
-    <string name="pref_force_direct_boot_desc">Immagina che il dispositivo si trovi nello stato precedente al primo sblocco per effettuare il test.</string>
+    <string name="pref_force_direct_boot_desc">Fingi che il dispositivo si trovi nello stato precedente al primo sblocco per effettuare dei test.</string>
 
     <string name="pref_migrate_direct_boot_name">Migrazione delle registrazioni di avvio diretto</string>
     <string name="pref_migrate_direct_boot_desc">Migra le registrazioni effettuate prima del primo sblocco. Normalmente ciò avviene automaticamente dopo il primo sblocco.</string>
@@ -54,7 +67,7 @@
     <!-- Title of the preference category holding the "Add new rule" option and the list of record rules. -->
     <string name="pref_header_rules">Regole</string>
     <!-- Message shown above the record rules list that indicates what rules do and how to interact with the list UI. -->
-    <string name="record_rules_info">Le regole determinano quale azione eseguire per ogni chiamata corrispondente. Sono processate dall\'alto verso il basso finché una corrispondenza viene trovata. Tocca e tieni premuto per riordinare le regole oppure scorri per eliminarle.</string>
+    <string name="record_rules_info">Le regole determinano quale azione eseguire per ogni chiamata corrispondente. Sono elaborate dall\'alto verso il basso fino alla prima corrispondenza. Tocca e tieni premuto per riordinare le regole oppure scorri per eliminarle.</string>
     <!-- Title of preference option for adding a new record rule. -->
     <string name="pref_add_new_rule_name">Aggiungi nuova regola</string>
     <!-- Description of preference option for adding a new record rule. -->
@@ -71,11 +84,12 @@
     <string name="record_rules_list_action_remove">Elimina regola</string>
 
     <!-- Title of the record rule editor section for configuring the call number to match. -->
-    <string name="record_rule_number_title">Numero telefonico</string>
+    <string name="pref_header_rule_actions">Azioni della regola</string>
+    <string name="record_rule_number_title">Numero di telefono</string>
     <!-- Text for the UI item to select this element in the rule editor. -->
-    <string name="record_rule_number_any_item">Qualsiasi</string>
+    <string name="record_rule_number_any_item">Qualsiasi numero</string>
     <!-- Text for the UI item to select this element in the rule editor. -->
-    <string name="record_rule_number_unknown_item">Sconosciuto</string>
+    <string name="record_rule_number_unknown_item">Numeri sconosciuti</string>
     <!-- Text for the UI item to select this element in the rule editor. This represents contact rules as a category, not a specific contact. -->
     <string name="record_rule_number_contact_item">Contatto</string>
     <!-- Text for the UI item to select this element in the rule editor. This represents contact group rules as a category, not a specific contact group. -->
@@ -137,11 +151,13 @@
     <string name="record_rule_action_ignore_summary">Azione: Ignora la chiamata</string>
 
     <!-- Output directory settings -->
-    <string name="pref_filename_template_name">Modello nome file</string>
+    <string name="record_rule_initial_state_paused_summary">Stato iniziale: In pausa finché non viene ripresa manualmente</string>
+    <string name="pref_filename_template_name">Template nome file</string>
     <string name="pref_file_retention_name">Ritenzione file</string>
     <string name="retention_keep_all">Mantieni tutto</string>
     <plurals name="retention_days">
         <item quantity="one">Mantieni per %d giorno</item>
+        <item quantity="many">Mantieni per %d giorni</item>
         <item quantity="other">Mantieni per %d giorni</item>
     </plurals>
     <string name="retention_unusable">La ritenzione file è disabilitata perché il template per il nome file non è compatibile con questa funzione.</string>
@@ -150,6 +166,7 @@
     <string name="pref_format_param_desc_compression_level">Livello di compressione</string>
     <string name="pref_format_param_desc_bitrate">Velocità in bit</string>
     <string name="pref_sample_rate_name">Frequenza di campionamento</string>
+    <string name="pref_audio_source_name">Sorgente audio</string>
     <string name="custom_param_value">Personalizzato</string>
 
     <string name="reset_to_defaults">Ripristina alle impostazioni predefinite</string>
@@ -157,8 +174,8 @@
     <!-- Filename template dialog -->
     <string name="filename_template_dialog_title">Template nome file</string>
     <!-- NOTE: For the "supported_vars" annotation, the content MUST not be empty. Any string can go inside of it as a placeholder. -->
-    <string name="filename_template_dialog_message">Inserisci un template personalizzato per il nome file. Le variabili sono specificate all\'interno di parentesi graffe (eg. <annotation type="template">{var}</annotation>). Le riserve sono specificate tra parentesi quadre (eg. <annotation type="template">[{contact_name}|Sconosciuto]</annotation>).\n\nVariabili supportate: <annotation type="supported_vars">PLACEHOLDER</annotation>. Guarda <annotation type="template_docs">la documentazione</annotation> per una completa descrizione della sintassi.</string>
-    <string name="filename_template_dialog_warning_subdirectories">A causa delle scarse performance dell\'Android Storage Access Framework\'s, usare le sottocartelle (il carattere <annotation type="template">/</annotation>) potrebbe causare un significativo ritardo quando si salva la registrazione su alcuni dispositivi. Il ritardo avverrà alla fine della chiamata e non dovrebbe risultare in nessuna perdita di audio della chiamata.</string>
+    <string name="filename_template_dialog_message">Inserisci un template personalizzato per il nome dei file. Le variabili si indicano con le parentesi graffe (es. <annotation type="template">{var}</annotation>). I valori alternativi si indicano con le parentesi quadre (es. <annotation type="template">[{contact_name}|Sconosciuto]</annotation>). Variabili supportate: <annotation type="supported_vars">PLACEHOLDER</annotation>. Vedi <annotation type="template_docs">la documentazione</annotation> per una descrizione completa della sintassi.</string>
+    <string name="filename_template_dialog_warning_subdirectories">A causa delle scarse prestazioni dello Storage Access Framework di Android, usare le sottocartelle (il carattere <annotation type="template">/</annotation>) potrebbe causare un significativo ritardo quando si salva la registrazione su alcuni dispositivi. Il ritardo avverrà alla fine della chiamata e non dovrebbe risultare in nessuna perdita di audio della chiamata.</string>
     <string name="filename_template_dialog_error_empty">Il template non può essere vuoto</string>
     <string name="filename_template_dialog_error_unknown_variable">Variabile sconosciuta: <annotation type="template">PLACEHOLDER</annotation></string>
     <string name="filename_template_dialog_error_has_argument">La variabile non può avere un argomento: <annotation type="template">PLACEHOLDER</annotation></string>
@@ -173,7 +190,7 @@
 
     <!-- Format parameter dialog -->
     <string name="format_param_dialog_title">Parametro personalizzato</string>
-    <string name="format_param_dialog_message">Inserisci un valore nel range [%1$s, %2$s].</string>
+    <string name="format_param_dialog_message">Inserisci un valore compreso in [%1$s, %2$s].</string>
 
     <!-- Format sample rate dialog -->
     <string name="format_sample_rate_dialog_title">Frequenza di campionamento personalizzata</string>
@@ -189,42 +206,46 @@
     <string name="format_sample_rate">%s Hz</string>
 
     <!-- Min duration dialog -->
+    <string name="audio_source_stereo_warning">Pochissimi dispositivi supportano le registrazioni stereo. Se la registrazione fallisce o l\'audio è inutilizzabile, seleziona una sorgente mono.</string>
     <string name="min_duration_dialog_title">@string/pref_min_duration_name</string>
-    <string name="min_duration_dialog_message">Inserisci la durata minima di conservazione di una registrazione, escludendo pause e attesa delle chiamate. Questa può sempre essere ignorata durante una chiamata dalla notifica.</string>
+    <string name="min_duration_dialog_message">Inserisci la durata minima perché una registrazione sia conservata, escludendo pause e attese telefoniche. Questa opzione può sempre essere sovrascritta durante una chiamata dalla notifica.</string>
     <plurals name="min_duration_dialog_seconds">
         <item quantity="one">%d secondo</item>
+        <item quantity="many">%d secondi</item>
         <item quantity="other">%d secondi</item>
     </plurals>
 
     <!-- Snackbar alerts -->
-    <string name="alert_logcat_success">Registri salvati correttamente su %1$s</string>
-    <string name="alert_logcat_failure">Impossibile salvare i registri su %1$s: %2$s</string>
+    <string name="alert_logcat_success">Log salvati correttamente su %1$s</string>
+    <string name="alert_logcat_failure">Impossibile salvare i log su %1$s: %2$s</string>
     <string name="alert_contact_group_query_failure">Impossibile interrogare i gruppi di contatti: %1$s</string>
 
     <!-- Notifications -->
     <string name="notification_channel_persistent_name">Servizi in background</string>
     <string name="notification_channel_persistent_desc">Notifica persistente per registrare le chiamate</string>
-    <string name="notification_channel_failure_name">Failure alerts</string>
-    <string name="notification_channel_failure_desc">Avvisi per errori durante la registrazione della chiamata</string>
+    <string name="notification_channel_failure_name">Avvisi di errore</string>
+    <string name="notification_channel_failure_desc">Avvisi per errori durante le registrazioni delle chiamate</string>
     <string name="notification_channel_success_name">Avvisi di successo</string>
-    <string name="notification_channel_success_desc">Avvisi per la registrazione chiamata a buon fine</string>
+    <string name="notification_channel_success_desc">Avvisi per le registrazioni delle chiamate andate a buon fine</string>
     <string name="notification_channel_silence_name">Avvisi di puro silenzio</string>
     <string name="notification_channel_silence_desc">Avvisa se le registrazioni delle chiamate contengono puro silenzio</string>
     <string name="notification_direct_boot_migration_failed">Impossibile migrare le registrazioni</string>
-    <string name="notification_direct_boot_migration_error">Alcune registrazioni salvate prima dello sblocco iniziale del dispositivo non potevano essere spostate nella directory di output.</string>
+    <string name="notification_direct_boot_migration_error">Alcune registrazioni salvate prima dello sblocco iniziale del dispositivo non hanno potuto essere spostate nella cartella di destinazione.</string>
     <string name="notification_recording_initializing">Inizializzazione registrazione chiamata</string>
     <string name="notification_recording_in_progress">Registrazione chiamata in corso</string>
     <string name="notification_recording_finalizing">Finalizzando registrazione chiamata</string>
     <string name="notification_recording_paused">Registrazione chiamata in pausa</string>
-    <string name="notification_recording_on_hold">Registrazione in attesa</string>
+    <string name="notification_recording_on_hold">Chiamata in attesa</string>
     <string name="notification_recording_failed">Registrazione chiamata fallita</string>
     <string name="notification_recording_succeeded">Chiamata registrata correttamente</string>
+    <string name="notification_move_error_permissions">Questo è stato causato da Android, che ha rimosso a BCR i permessi di accesso alla cartella. Selezionare la stessa cartella di destinazione consentirà nuovamente i permessi necessari.</string>
     <string name="notification_message_delete_at_end">La registrazione sarà cancellata alla fine della chiamata. Premi ripristina per mantenere la registrazione.</string>
     <plurals name="notification_message_delete_at_end_too_short">
         <item quantity="one">La registrazione verrà eliminata alla fine della chiamata se è più breve di %d secondo. Tocca Ripristina per conservare la registrazione.</item>
+        <item quantity="many">La registrazione verrà eliminata alla fine della chiamata se è più breve di %d secondi. Tocca Ripristina per conservare la registrazione.</item>
         <item quantity="other">La registrazione verrà eliminata alla fine della chiamata se è più breve di %d secondi. Tocca Ripristina per conservare la registrazione.</item>
     </plurals>
-    <string name="notification_internal_android_error">La registrazione è fallita a causa di un componente interno di Android  (%s). Questo dispositivo o firmware potrebbe essere non supportare la registrazione delle chiamate.</string>
+    <string name="notification_internal_android_error">La registrazione è fallita a causa di un componente interno di Android (%s). Questo dispositivo o firmware potrebbero non supportare la registrazione delle chiamate.</string>
     <string name="notification_pure_silence_error">La registrazione è stata scartata perché l\'audio era completamente silenzioso. Questo dispositivo potrebbe non supportare la registrazione delle chiamate associate all\'app \'%s\'.</string>
     <string name="notification_action_open">Apri</string>
     <string name="notification_action_share">Condividi</string>
@@ -237,5 +258,24 @@
     <string name="quick_settings_label">Registrazione chiamate</string>
 
     <!-- Snackbar alerts -->
-    <string name="documentsui_not_found">Il file manager di Android (DocumentsUI) non è disponibile.</string>
+    <string name="browser_not_found">Nessun browser web disponibile.</string>
+    <string name="documentsui_not_found">Il gestore file integrato di Android (DocumentsUI) non è disponibile.</string>
+    <string name="pref_notification_open_dir_name">Apri cartella dalla notifica</string>
+    <string name="pref_notification_open_dir_desc">Apri la cartella di destinazione invece che il file della registrazione premendo sulla notifica di registrazione completata.</string>
+    <string name="pref_show_launcher_icon_name">Mostra icona dell\'app</string>
+    <string name="pref_header_rule_conditions">Condizioni della regola</string>
+    <string name="record_rule_initial_state_title">Stato iniziale</string>
+    <string name="record_rule_initial_state_recording_item">Registra immediatamente</string>
+    <string name="record_rule_initial_state_paused_item">"In pausa finché non viene ripresa manualmente "</string>
+    <string name="record_rule_initial_state_recording_desc">La registrazione inizierà immediatamente e l\'intera chiamata sarà registrata ammenoché non sia selezionata manualmente l\'opzione Pausa nella notifica.</string>
+    <string name="record_rule_initial_state_paused_desc">L\'audio non sarà registrato finché non sarà selezionata manualmente l\'opzione Riprendi nella notifica.</string>
+    <string name="audio_source_voice_call">Combinato (Mono)</string>
+    <string name="audio_source_voice_uplink_downlink">Uplink + downlink (Stereo, canali separati)</string>
+    <string name="audio_source_voice_uplink">Solo uplink (Mono)</string>
+    <string name="audio_source_voice_downlink">Solo downlink (Mono)</string>
+    <string name="notification_move_failed">Impossibile spostare la registrazione</string>
+    <string name="notification_move_error">Non è stato possibile spostare uno o più file nella cartella di destinazione selezionata. Sono ancora presenti nella cartella predefinita.</string>
+    <string name="contact_picker_not_found">Il selettore contatti di sistema di Android non è disponibile.</string>
+    <string name="summary_separator">", "</string>
+    <string name="record_rule_initial_state_recording_summary">Stato iniziale: Registra immediatamente</string>
 </resources>
