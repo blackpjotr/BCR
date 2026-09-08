@@ -9,6 +9,8 @@
 
 ### Unreleased
 
+* Update Italian translations ([PR #939 @federicocarboni])
+
 ### Version 3.8
 
 * Request URI permissions again when selecting the same output directory ([Issue #919], [PR #935 @chenxiaolong])
@@ -1370,3 +1372,4 @@ Non-user-facing changes:
 [PR #935 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/935
 [PR #936 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/936
 [PR #937 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/937
+[PR #939 @federicocarboni]: https://github.com/chenxiaolong/BCR/pull/939
