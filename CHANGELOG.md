@@ -10,6 +10,7 @@
 ### Unreleased
 
 * Update Italian translations ([PR #939 @federicocarboni])
+* Update German translations ([Issue #791], [PR #940 @ElsAr4e])
 
 ### Version 3.8
 
@@ -1373,3 +1374,4 @@ Non-user-facing changes:
 [PR #936 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/936
 [PR #937 @chenxiaolong]: https://github.com/chenxiaolong/BCR/pull/937
 [PR #939 @federicocarboni]: https://github.com/chenxiaolong/BCR/pull/939
+[PR #940 @ElsAr4e]: https://github.com/chenxiaolong/BCR/pull/940
