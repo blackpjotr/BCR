@@ -18,10 +18,10 @@
     <string name="pref_record_rules_desc">Konfigurieren, welche Anrufe automatisch aufgenommen werden sollen.</string>
 
     <string name="pref_output_dir_name">Ausgabeverzeichnis</string>
-    <string name="pref_output_dir_desc">Verzeichnis für Aufnahmen auswählen. Lange drücken, um im Dateimanager zu öffnen.</string>
+    <string name="pref_output_dir_desc">Verzeichnis zum Speichern der Aufnahmen auswählen. Lange drücken, um im Dateimanager zu öffnen.</string>
 
     <string name="pref_output_format_name">Ausgabeformat</string>
-    <string name="pref_output_format_desc">Kodierungsformat für Aufnahmen auswählen.</string>
+    <string name="pref_output_format_desc">Ein Kodierungsformat für die Aufnahmen auswählen.</string>
 
     <string name="pref_min_duration_name">Mindestdauer der Aufnahme</string>
     <plurals name="pref_min_duration_desc">
@@ -30,7 +30,7 @@
     </plurals>
     <string name="pref_min_duration_desc_zero">Aufnahmen beliebiger Länge behalten.</string>
 
-    <string name="pref_write_metadata_name">Metadaten-Datei erstellen</string>
+    <string name="pref_write_metadata_name">Metadatendatei schreiben</string>
     <string name="pref_write_metadata_desc">JSON-Datei mit Details zum Anruf neben der Audioaufnahme erstellen.</string>
 
     <string name="pref_record_telecom_apps_name">In das Telecom-Framework integrierte Anrufe aufzeichnen</string>
@@ -39,7 +39,7 @@
     <string name="pref_record_dialing_state_name">Anrufe vor Verbindung aufnehmen</string>
     <string name="pref_record_dialing_state_desc">Aufnahme bei ausgehenden Anrufen starten, sobald mit dem Wählen begonnen wird, anstatt zu warten, bis der Anruf verbunden ist.</string>
 
-    <string name="pref_notification_open_dir_name">Ordner von der Benachrichtigung aus öffnen</string>
+    <string name="pref_notification_open_dir_name">Verzeichnis über die Benachrichtigung öffnen</string>
     <string name="pref_notification_open_dir_desc">Öffnet das Ausgabeverzeichnis statt der Aufnahmedatei, wenn auf die Benachrichtigung über die abgeschlossene Aufnahme getippt wird.</string>
 
     <string name="pref_show_launcher_icon_name">Launcher-Symbol anzeigen</string>
@@ -59,14 +59,14 @@
     <string name="pref_save_logs_desc">Logcat-Logs in einer Datei speichern.</string>
 
     <!-- Pick contact group activity -->
-    <string name="pick_contact_group_title">Kontaktgruppe wählen</string>
+    <string name="pick_contact_group_title">Kontaktgruppe auswählen</string>
     <string name="pick_contact_group_local_group">Lokale Gruppe</string>
 
     <!-- Rules section -->
     <string name="pref_header_rules">Regeln</string>
-    <string name="record_rules_info">Regeln bestimmen, welche Aktion bei übereinstimmenden Anrufen ausgeführt wird. Sie werden von oben nach unten geprüft, bis eine Übereinstimmung gefunden ist. Zum Verschieben lange tippen, zum Löschen wischen.</string>
+    <string name="record_rules_info">Regeln bestimmen, welche Aktion für einen übereinstimmenden Anruf ausgeführt wird. Sie werden von oben nach unten verarbeitet, bis eine Übereinstimmung gefunden wird. Tippen und halten, um Regeln neu anzuordnen oder wischen, um sie zu löschen.</string>
     <string name="pref_add_new_rule_name">Neue Regel hinzufügen</string>
-    <string name="pref_add_new_rule_desc">Neue Regel erstellen, um festzulegen, welche Aktion für einen übereinstimmenden Anruf ausgeführt wird.</string>
+    <string name="pref_add_new_rule_desc">Eine neue Regel hinzufügen, um die Aktion für einen übereinstimmenden Anruf festzulegen.</string>
     <string name="record_rules_list_custom_name">Regel %d</string>
     <string name="record_rules_list_default_name">Standardregel</string>
     <string name="record_rules_list_action_move_up">Regel nach oben verschieben</string>
@@ -77,8 +77,8 @@
     <string name="pref_header_rule_actions">Regelaktionen</string>
 
     <string name="record_rule_number_title">Rufnummer</string>
-    <string name="record_rule_number_any_item">Beliebig</string>
-    <string name="record_rule_number_unknown_item">Unbekannt</string>
+    <string name="record_rule_number_any_item">Beliebige Nummer</string>
+    <string name="record_rule_number_unknown_item">Unbekannte Nummern</string>
     <string name="record_rule_number_contact_item">Kontakt</string>
     <string name="record_rule_number_contact_group_item">Kontaktgruppe</string>
     <string name="record_rule_number_unknown_summary">Übereinstimmung: Unbekannte Nummern</string>
@@ -88,9 +88,9 @@
 
     <string name="record_rule_type_title">Anruftyp</string>
     <string name="record_rule_type_any_item">Beliebig</string>
-    <string name="record_rule_type_incoming_item">Eingehend</string>
-    <string name="record_rule_type_outgoing_item">Ausgehend</string>
-    <string name="record_rule_type_conference_item">Konferenz</string>
+    <string name="record_rule_type_incoming_item">Eingehender Anruf</string>
+    <string name="record_rule_type_outgoing_item">Ausgehender Anruf</string>
+    <string name="record_rule_type_conference_item">Konferenzanruf</string>
     <string name="record_rule_type_incoming_summary">Typ: Eingehender Anruf</string>
     <string name="record_rule_type_outgoing_summary">Typ: Ausgehender Anruf</string>
     <string name="record_rule_type_conference_summary">Typ: Konferenzanruf</string>
@@ -101,9 +101,9 @@
     <string name="record_rule_sim_specific_summary">SIM-Steckplatz: %d</string>
 
     <string name="record_rule_action_title">Aktion</string>
-    <string name="record_rule_action_save_item">Speichern</string>
-    <string name="record_rule_action_discard_item">Verwerfen</string>
-    <string name="record_rule_action_ignore_item">Ignorieren</string>
+    <string name="record_rule_action_save_item">Aufnahme speichern</string>
+    <string name="record_rule_action_discard_item">Aufnahme verwerfen</string>
+    <string name="record_rule_action_ignore_item">Anruf ignorieren</string>
     <string name="record_rule_action_save_desc">Aufnahme speichern. Die Aufnahme kann am Ende des Anrufs über die während des Anrufs angezeigte Benachrichtigung zum Löschen markiert werden.</string>
     <string name="record_rule_action_discard_desc">Aufnahme am Ende des Anrufs verwerfen. Die Aufnahme kann über die während eines Anrufs angezeigte Benachrichtigung behalten werden.</string>
     <string name="record_rule_action_ignore_desc">Anruf komplett ignorieren. Der Anruf wird nicht aufgenommen und es ist nicht möglich, die Aufnahme während des Anrufs zu starten.</string>
@@ -112,8 +112,8 @@
     <string name="record_rule_action_ignore_summary">Aktion: Anruf ignorieren</string>
 
     <string name="record_rule_initial_state_title">Ausgangszustand</string>
-    <string name="record_rule_initial_state_recording_item">Aufnahme</string>
-    <string name="record_rule_initial_state_paused_item">Pausiert</string>
+    <string name="record_rule_initial_state_recording_item">Sofort aufnehmen</string>
+    <string name="record_rule_initial_state_paused_item">Pausiert, bis manuell fortgesetzt wird</string>
     <string name="record_rule_initial_state_recording_desc">Die Aufnahme beginnt sofort und der gesamte Anruf wird aufgenommen, sofern nicht die Option \"Pausieren\" in der Benachrichtigung manuell ausgewählt wird.</string>
     <string name="record_rule_initial_state_paused_desc">Audio wird nicht aufgenommen, bis die Option \"Fortsetzen\" in der Benachrichtigung manuell ausgewählt wird.</string>
     <string name="record_rule_initial_state_recording_summary">Ausgangszustand: Sofort aufnehmen</string>
@@ -127,7 +127,7 @@
         <item quantity="one">%d Tag behalten</item>
         <item quantity="other">%d Tage behalten</item>
     </plurals>
-    <string name="retention_unusable">Dateiaufbewahrung deaktiviert, da die aktuelle Dateinamenvorlage inkompatibel ist.</string>
+    <string name="retention_unusable">Die Dateiaufbewahrung ist deaktiviert, da die aktuelle Dateinamenvorlage mit dieser Funktion nicht kompatibel ist.</string>
 
     <!-- Output format settings -->
     <string name="pref_format_param_desc_compression_level">Kompressionsstufe</string>
@@ -176,7 +176,7 @@
     <string name="audio_source_voice_uplink_downlink">Aufwärtsverbindung + Abwärtsverbindung\n(Stereo, getrennte Kanäle)</string>
     <string name="audio_source_voice_uplink">Nur Aufwärtsverbindung (Mono)</string>
     <string name="audio_source_voice_downlink">Nur Abwärtsverbindung (Mono)</string>
-    <string name="audio_source_stereo_warning">Sehr wenige Geräte unterstützen Stereoaufnahmen. Wenn die Aufnahme fehlschlägt oder Audio fehlt, zu einer Mono-Audioquelle wechseln.</string>
+    <string name="audio_source_stereo_warning">Sehr wenige Geräte unterstützen Stereoaufnahmen. Wenn die Aufnahme fehlschlägt oder Audio fehlt, auf eine Mono-Audioquelle wechseln.</string>
 
     <!-- Min duration dialog -->
     <string name="min_duration_dialog_title">@string/pref_min_duration_name</string>
@@ -188,18 +188,18 @@
 
     <!-- Snackbar alerts -->
     <string name="alert_logcat_success">Logs erfolgreich unter %1$s gespeichert</string>
-    <string name="alert_logcat_failure">Logs konnten nicht unter %1$s gespeichert werden: %2$s</string>
-    <string name="alert_contact_group_query_failure">Fehler beim Abfragen der Kontaktgruppen: %1$s</string>
+    <string name="alert_logcat_failure">Speichern der Logs in %1$s fehlgeschlagen: %2$s</string>
+    <string name="alert_contact_group_query_failure">Abfrage der Kontaktgruppen fehlgeschlagen: %1$s</string>
 
     <!-- Notifications -->
     <string name="notification_channel_persistent_name">Hintergrunddienste</string>
-    <string name="notification_channel_persistent_desc">Dauerhafte Benachrichtigung für Hintergrund-Anrufaufnahme</string>
+    <string name="notification_channel_persistent_desc">Dauerhafte Benachrichtigung für die Anrufaufnahme im Hintergrund</string>
     <string name="notification_channel_failure_name">Fehlerbenachrichtigungen</string>
     <string name="notification_channel_failure_desc">Benachrichtigungen bei Fehlern während der Anrufaufnahme</string>
     <string name="notification_channel_success_name">Erfolgsbenachrichtigungen</string>
     <string name="notification_channel_success_desc">Benachrichtigungen bei erfolgreichen Anrufaufnahmen</string>
     <string name="notification_channel_silence_name">Benachrichtigungen bei vollständiger Stille</string>
-    <string name="notification_channel_silence_desc">Warnung, wenn Anrufaufnahmen vollständige Stille enthalten</string>
+    <string name="notification_channel_silence_desc">Warnen, wenn Anrufaufnahmen ausschließlich Stille enthalten</string>
     <string name="notification_direct_boot_migration_failed">Migration der Aufnahmen fehlgeschlagen</string>
     <string name="notification_direct_boot_migration_error">Einige Aufnahmen, die vor der ersten Entsperrung des Geräts gespeichert wurden, konnten nicht in das Ausgabeverzeichnis verschoben werden.</string>
     <string name="notification_recording_initializing">Anrufaufnahme wird initialisiert</string>
@@ -207,17 +207,18 @@
     <string name="notification_recording_finalizing">Anrufaufnahme wird abgeschlossen</string>
     <string name="notification_recording_paused">Anrufaufnahme pausiert</string>
     <string name="notification_recording_on_hold">Anruf wird gehalten</string>
-    <string name="notification_recording_failed">Anrufaufnahme fehlgeschlagen</string>
+    <string name="notification_recording_failed">Aufnahme des Anrufs fehlgeschlagen</string>
     <string name="notification_recording_succeeded">Anruf erfolgreich aufgenommen</string>
     <string name="notification_move_failed">Verschieben der Aufnahme fehlgeschlagen</string>
     <string name="notification_move_error">Eine oder mehrere Dateien konnten nicht in das ausgewählte Ausgabeverzeichnis verschoben werden. Sie befinden sich weiterhin im Standard-Ausgabeverzeichnis.</string>
+    <string name="notification_move_error_permissions">Dies wurde verursacht durch Android, das die bestehenden Berechtigungen von BCR für das Verzeichnis entzogen hat. Durch die Auswahl desselben Ausgabeverzeichnisses werden die erforderlichen Berechtigungen erneut erteilt.</string>
     <string name="notification_message_delete_at_end">Die Aufnahme wird am Ende des Anrufs gelöscht. Auf „Wiederherstellen“ tippen, um die Aufnahme zu behalten.</string>
     <plurals name="notification_message_delete_at_end_too_short">
         <item quantity="one">Die Aufnahme wird am Ende des Anrufs gelöscht, wenn sie kürzer als %d Sekunde ist. Auf „Wiederherstellen“ tippen, um die Aufzeichnung zu behalten.</item>
         <item quantity="other">Die Aufnahme wird am Ende des Anrufs gelöscht, wenn sie kürzer als %d Sekunden ist. Auf „Wiederherstellen“ tippen, um die Aufnahme zu behalten.</item>
     </plurals>
     <string name="notification_internal_android_error">Die Aufnahme ist in einer internen Android-Komponente (%s) fehlgeschlagen. Dieses Gerät oder die Firmware unterstützt möglicherweise keine Anrufaufnahme.</string>
-    <string name="notification_pure_silence_error">Die Aufnahme wurde verworfen, da das Audio völlig stumm war. Dieses Gerät unterstützt möglicherweise nicht das Aufzeichnen von Anrufen, die mit der App \'%s\' verknüpft sind.</string>
+    <string name="notification_pure_silence_error">Die Aufnahme wurde verworfen, weil das Audio vollständig stumm war. Dieses Gerät unterstützt möglicherweise keine Aufnahme von Anrufen, die der App „%s“ zugeordnet sind.</string>
     <string name="notification_action_open">Öffnen</string>
     <string name="notification_action_share">Teilen</string>
     <string name="notification_action_delete">Löschen</string>
