@@ -43,6 +43,11 @@ As the name alludes, BCR intends to be a basic as possible. The project will hav
     * **For devices rooted with Magisk/KernelSU**, simply flash the zip as a Magisk/KernelSU module from within the respective application.
         * **If you use KernelSU**, ensure that a metamodule is installed. Then, in KernelSU Manager, change BCR's app profile to "Custom" and disable the "Unmount modules" option. BCR's files must remain mounted or else the app will crash.
         * **If you use any type of root hiding feature**, also extract the `.apk` from the zip and install it manually before rebooting. This works around crashes and other issues caused by BCR's APK being hidden from the system.
+        * **For LineageOS (and LineageOS-based OS) users**, there is a rare OS bug where Android will sometimes fail to create BCR's app data directory, leading to a crash with a `Failed to prepare` log message. This can be fixed by manually creating BCR's app data directory via adb:
+          ```bash
+          adb shell mkdir -p /sdcard/Android/data/com.chiller3.bcr/files
+          adb shell chmod -R 777 /sdcard/Android/data/com.chiller3.bcr
+          ```
 
     * **For unrooted custom firmware**, flash the zip while booted into recovery.
         * **NOTE**: The `READ_CALL_LOG` permission is hard restricted in Android 10+, which prevents it from being granted, even via Android's settings. To remove this restriction, run via adb after rebooting back into Android:
