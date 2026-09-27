@@ -403,6 +403,8 @@ and then build the release zip:
 
 ## Contributing
 
+([AI policy](https://github.com/chenxiaolong/chenxiaolong/blob/master/AI_POLICY.md))
+
 Bug fix and translation pull requests are welcome and much appreciated!
 
 If you are interested in implementing a new feature and would like to see it included in BCR, please open an issue to discuss it first. I intend for BCR to be as simple and low-maintenance as possible, so I am not too inclined to add any new features, but I could be convinced otherwise.
